@@ -1,31 +1,54 @@
-# My-Type — Minimal ECS demo (SFML)
+# My-Type -- Minimal ECS demo (SFML)
 
 A small, self-contained Entity-Component-System (ECS) demo written in C++17.  
 This repository demonstrates a compact registry, a conservative sparse-backed hybrid storage, an optional-reference proxy, and a tiny indexed zipper helper for iterating aligned component slots. The demo uses SFML to render a controllable entity and static drawables.
 
-## Quick start
+```markdown
+## Quick start (CMake)
 
 Requirements:
-- C++17 toolchain (g++)
-- SFML (graphics, window, system)
-- make
+- C++17 toolchain (g++, clang, or MSVC)
+- CMake (>= 3.15 recommended)
+- SFML (graphics, window, system) -- development package
+- On Linux: build tools (make, ninja, etc.)
+- On Windows: Visual Studio, or MSYS2/MinGW, or use vcpkg
 
-Build and run:
-
+Linux (example with out-of-tree build)
 ```sh
-make
-./bs-rtype
+# install dependencies (Ubuntu example)
+sudo apt update
+sudo apt install -y build-essential cmake libsfml-dev
+
+# configure and build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+
+# run
+./build/src/bs-rtype
 ```
 
-Controls
-- Arrow keys / WASD / QZ — move the player
-- Escape — quit
+Windows (Visual Studio / vcpkg example)
+- With vcpkg:
+  1. Install SFML via vcpkg:
+     - vcpkg install sfml:x64-windows
+  2. Configure with vcpkg toolchain:
+     - cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
+     - cmake --build build --config Release
+     - .\\build\\Release\\bs-rtype.exe
+
+- Without vcpkg:
+  - Download the SFML SDK for your compiler (MSVC / MinGW) and set SFML_DIR to the package's cmake folder, or set CMAKE_PREFIX_PATH to point to SFML before running cmake.
+
+Notes:
+- If SFML is installed in a custom location, set -DSFML_DIR=/path/to/SFML to help find_package(SFML ...) locate it.
+- If you want static SFML on Windows, pass -DBUILD_SHARED_SFML=OFF; you may also need to link SFML dependencies manually (see comments in src/CMakeLists.txt).
+```
 
 ## High-level architecture
 
 - `registry` (in include/Registry.hpp) orchestrates component storages and systems.
 - Components are plain POD structs in include/Components.hpp.
-- Default storage is `HybridArray` (include/HybridArray.hpp) — a sparse-backed container implemented over `std::vector<std::optional<T>>`.
+- Default storage is `HybridArray` (include/HybridArray.hpp) -- a sparse-backed container implemented over `std::vector<std::optional<T>>`.
 - Systems are simple callables registered with the registry; example systems are in include/Systems.hpp.
 - Indexed zipper helper (include/Zipper.hpp) allows aligned iteration across different storages by index.
 
@@ -85,26 +108,26 @@ This section documents each public header and main source file so you can quickl
   - Program entrypoint and demo setup.
   - Creates an `sf::RenderWindow`, a `registry` instance, registers component storages, spawns entities, and registers systems.
   - Registers basic systems:
-    - Control system — reads input and updates `Velocity`.
-    - Position system — integrates `Velocity` into `Position`.
-    - Draw system — renders `Drawable` at `Position`.
+    - Control system -- reads input and updates `Velocity`.
+    - Position system -- integrates `Velocity` into `Position`.
+    - Draw system -- renders `Drawable` at `Position`.
 
 - include/Registry.hpp
   - Central orchestration type: `registry`.
   - Responsibilities:
     - Register and store component storages keyed by `std::type_index`.
     - Provide component accessors:
-      - `register_component<T>()` — create and store a storage if missing.
-      - `get_components<T>()` / `get_components_if<T>()` — obtain storage references or nullptr.
+      - `register_component<T>()` -- create and store a storage if missing.
+      - `get_components<T>()` / `get_components_if<T>()` -- obtain storage references or nullptr.
     - Entity lifecycle:
-      - `spawn_entity()` — returns an `Entity` wrapper holding an id.
-      - `kill_entity(Entity)` — erases components for that entity and recycles id.
+      - `spawn_entity()` -- returns an `Entity` wrapper holding an id.
+      - `kill_entity(Entity)` -- erases components for that entity and recycles id.
     - Component operations:
-      - `add_component(Entity, T)` / `emplace_component(...)` — add or replace components.
+      - `add_component(Entity, T)` / `emplace_component(...)` -- add or replace components.
       - `remove_component<Entity, T>()`.
     - Systems:
-      - `add_system<Comps...>(fn)` — register callables to run each frame.
-      - `run_systems()` — invoke registered systems in insertion order.
+      - `add_system<Comps...>(fn)` -- register callables to run each frame.
+      - `run_systems()` -- invoke registered systems in insertion order.
   - Notes:
     - The internal erase map and callback mechanics make `kill_entity` remove matching slots across registered storages.
     - The registry is intentionally minimal and designed to accept different storage backends that implement the expected `get(id)` / `get_ref(id)` semantics.
@@ -112,11 +135,11 @@ This section documents each public header and main source file so you can quickl
 - include/HybridArray.hpp
   - Sparse-backed storage implemented primarily as `std::vector<std::optional<T>>`.
   - API highlights:
-    - `insert_at(id, value)` / `emplace_at(id, ...)` — insert component at entity index; ensures capacity.
-    - `get(id) const` — returns a copy of `std::optional<T>`; zipper-friendly.
-    - `get_ref(id)` — returns `std::optional<T>&` to mutate in place; grows storage as needed.
-    - `erase(id)` — set slot to `std::nullopt` (does not shrink capacity).
-    - `size()` — returns the current sparse capacity (max entity id + 1), used for zipper alignment.
+    - `insert_at(id, value)` / `emplace_at(id, ...)` -- insert component at entity index; ensures capacity.
+    - `get(id) const` -- returns a copy of `std::optional<T>`; zipper-friendly.
+    - `get_ref(id)` -- returns `std::optional<T>&` to mutate in place; grows storage as needed.
+    - `erase(id)` -- set slot to `std::nullopt` (does not shrink capacity).
+    - `size()` -- returns the current sparse capacity (max entity id + 1), used for zipper alignment.
   - Rationale:
     - Keeps semantics simple and safe: out-of-range reads are handled via `get()` returning `std::nullopt`, and `get_ref()` explicitly grows for mutation.
     - Intended to be swapped with a packed/dense alternative without changing registry interface.
@@ -131,19 +154,19 @@ This section documents each public header and main source file so you can quickl
 - include/PackedArray.hpp
   - Dense/packed storage variant for performance-sensitive iteration.
   - Layout:
-    - `components_` — dense vector of components.
-    - `entities_` — dense vector of entity ids mapped one-to-one to components_.
-    - `index_map_` — sparse mapping entity id -> index into dense arrays.
+    - `components_` -- dense vector of components.
+    - `entities_` -- dense vector of entity ids mapped one-to-one to components_.
+    - `index_map_` -- sparse mapping entity id -> index into dense arrays.
   - API highlights:
-    - `insert(entity, component)` / `emplace(entity, ...)` — add or replace.
-    - `erase(entity)` — swap-remove to keep arrays dense.
+    - `insert(entity, component)` / `emplace(entity, ...)` -- add or replace.
+    - `erase(entity)` -- swap-remove to keep arrays dense.
     - `contains(entity)` / `index_of(entity)`.
     - `size()` returns number of active components (dense count).
   - Rationale:
     - Use PackedArray when iteration over active components and cache locality are priorities.
 
 - include/OptionalRef.hpp
-  - `optional_ref<T>` — a lightweight optional-like wrapper for references (conceptually like `optional<T&>`).
+  - `optional_ref<T>` -- a lightweight optional-like wrapper for references (conceptually like `optional<T&>`).
   - Implementation:
     - Stores a `T*` internally.
     - Methods: `has_value()`, `operator bool()`, `value()`, `reset()`, `assign(T&)`, `value_or(...)`.
@@ -154,16 +177,16 @@ This section documents each public header and main source file so you can quickl
   - Implements an indexed zipper: iterate indices across multiple storages and obtain each storage's `get(index)` result.
   - Key behavior:
     - Uses each container's `get(index)` method; `get` is expected to return an optional-like type or proxy.
-    - Iterator yields `std::tuple<std::size_t, get_result_t<Containers>...>` — the first element is the index.
+    - Iterator yields `std::tuple<std::size_t, get_result_t<Containers>...>` -- the first element is the index.
     - `make_indexed_zipper(containers...)` constructs the zipper.
   - Use:
     - Aligns iteration across sparse storages without building explicit intersection lists. Works well with `HybridArray::get()`.
 
 - include/Systems.hpp
   - Example system implementations used in the demo:
-    - `position_system` — integrates velocity into position per-frame.
-    - `control_system` — reads keyboard and updates `Velocity` for entities with `Controllable`.
-    - `make_draw_system(window)` — factory returning a system that draws `Drawable` at `Position` using an `sf::RenderWindow&`.
+    - `position_system` -- integrates velocity into position per-frame.
+    - `control_system` -- reads keyboard and updates `Velocity` for entities with `Controllable`.
+    - `make_draw_system(window)` -- factory returning a system that draws `Drawable` at `Position` using an `sf::RenderWindow&`.
   - Notes:
     - Systems obtain storages via `registry::get_components_if<T>()` and iterate by index, using `get()`/`get_ref()` as needed.
 
