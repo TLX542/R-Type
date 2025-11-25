@@ -3,7 +3,6 @@
 A small, self-contained Entity-Component-System (ECS) demo written in C++17.  
 This repository demonstrates a compact registry, a conservative sparse-backed hybrid storage, an optional-reference proxy, and a tiny indexed zipper helper for iterating aligned component slots. The demo uses SFML to render a controllable entity and static drawables.
 
-```markdown
 ## Quick start (CMake)
 
 Requirements:
@@ -42,7 +41,6 @@ Windows (Visual Studio / vcpkg example)
 Notes:
 - If SFML is installed in a custom location, set -DSFML_DIR=/path/to/SFML to help find_package(SFML ...) locate it.
 - If you want static SFML on Windows, pass -DBUILD_SHARED_SFML=OFF; you may also need to link SFML dependencies manually (see comments in src/CMakeLists.txt).
-```
 
 ## High-level architecture
 
