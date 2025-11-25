@@ -1,4 +1,3 @@
-# CMake for building the executable from src/ and include/
 cmake_minimum_required(VERSION 3.15)
 
 # Collect all source files in src/
@@ -19,29 +18,41 @@ target_include_directories(bs-rtype PRIVATE "${CMAKE_SOURCE_DIR}/include")
 # Compiler warnings / flags
 if (MSVC)
     target_compile_options(bs-rtype PRIVATE /W4 /permissive-)
-    # Disable some noisy warnings if needed:
-    # target_compile_definitions(bs-rtype PRIVATE _CRT_SECURE_NO_WARNINGS)
 else()
     target_compile_options(bs-rtype PRIVATE -Wall -Wextra -Wpedantic)
-    # You can add -Werror if you want to be strict
 endif()
 
-# Find SFML (requires SFML 2.5+)
-find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
+# Link SFML by name (assuming SFML is on the linker path, as before)
+target_link_libraries(bs-rtype PRIVATE sfml-graphics sfml-window sfml-system)
 
-if (SFML_FOUND)
-    target_link_libraries(bs-rtype PRIVATE sfml-graphics sfml-window sfml-system)
-else()
-    message(FATAL_ERROR "SFML not found. Install SFML development packages or set SFML_DIR.")
-endif()
+# -------------------------
+# dist target (windows only)
+# -------------------------
+if(WIN32)
+  find_program(MSYS_BASH_EXECUTABLE NAMES bash.exe bash HINTS "C:/msys64/usr/bin" "C:/msys2/usr/bin" ENV PATH)
 
-# When linking SFML statically on Windows you may need to define SFML_STATIC:
-if (WIN32 AND NOT BUILD_SHARED_SFML)
-    target_compile_definitions(bs-rtype PRIVATE SFML_STATIC)
-    # NOTE: When linking SFML statically you might also need to link SFML's dependencies
-    # such as opengl32, freetype, winmm, gdi32, ws2_32, etc. How to do that depends on
-    # the SFML package you used (vcpkg/MSYS2/official SDK).
-    #
-    # Example (uncomment if you know you need them):
-    # target_link_libraries(bs-rtype PRIVATE opengl32 freetype winmm gdi32 ws2_32)
+  set(MAKE_DIST_SCRIPT "${CMAKE_SOURCE_DIR}/tools/make_dist.sh")
+  set(PREPARE_DIST_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/PrepareDist.cmake")
+
+  if(MSYS_BASH_EXECUTABLE AND EXISTS "${MAKE_DIST_SCRIPT}")
+    message(STATUS "MSYS bash found: ${MSYS_BASH_EXECUTABLE}. dist will use tools/make_dist.sh")
+    add_custom_target(dist
+      DEPENDS bs-rtype
+      COMMENT "Create ${CMAKE_BINARY_DIR}/dist with executable and required DLLs (via make_dist.sh)"
+      COMMAND "${MSYS_BASH_EXECUTABLE}" -lc "\"${MAKE_DIST_SCRIPT}\" \"${CMAKE_BINARY_DIR}/src/bs-rtype.exe\""
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+  else()
+    message(STATUS "No MSYS bash found or make_dist.sh missing. dist will use PrepareDist.cmake fallback")
+    add_custom_target(dist
+      DEPENDS bs-rtype
+      COMMENT "Create ${CMAKE_BINARY_DIR}/dist with executable and required DLLs (via PrepareDist.cmake)"
+      COMMAND ${CMAKE_COMMAND}
+              -DEXECUTABLE=$<TARGET_FILE:bs-rtype>
+              -P ${PREPARE_DIST_SCRIPT}
+    )
+  endif()
+
+  # NOTE: Previously we generated a run_bs-rtype.bat in the repo root. That is removed.
+  # The tools/make_dist.sh now creates a .lnk shortcut in the repo root instead.
 endif()

@@ -1,3 +1,4 @@
+// Updated main.cpp: SFML2 / SFML3 compatibility layer
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <algorithm>
@@ -12,7 +13,13 @@
 int main()
 {
     // Create SFML window
+#if defined(SFML_VERSION_MAJOR) && (SFML_VERSION_MAJOR >= 3)
+    // SFML 3: VideoMode expects a Vector2u
+    sf::RenderWindow window(sf::VideoMode(sf::Vector2u{800, 600}), "ECS - updated main (hybrid + registry systems)");
+#else
+    // SFML 2: old constructor (width, height)
     sf::RenderWindow window(sf::VideoMode(800, 600), "ECS - updated main (hybrid + registry systems)");
+#endif
     window.setFramerateLimit(60);
 
     // Create registry and register component storages (HybridArray created internally)
@@ -55,6 +62,21 @@ int main()
 
             float vx = 0.0f;
             float vy = 0.0f;
+#if defined(SFML_VERSION_MAJOR) && (SFML_VERSION_MAJOR >= 3)
+            using Key = sf::Keyboard::Key;
+            if (sf::Keyboard::isKeyPressed(Key::Left) || sf::Keyboard::isKeyPressed(Key::Q)) {
+                vx = -ctrl.speed;
+            }
+            if (sf::Keyboard::isKeyPressed(Key::Right) || sf::Keyboard::isKeyPressed(Key::D)) {
+                vx = ctrl.speed;
+            }
+            if (sf::Keyboard::isKeyPressed(Key::Up) || sf::Keyboard::isKeyPressed(Key::Z)) {
+                vy = -ctrl.speed;
+            }
+            if (sf::Keyboard::isKeyPressed(Key::Down) || sf::Keyboard::isKeyPressed(Key::S)) {
+                vy = ctrl.speed;
+            }
+#else
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
                 vx = -ctrl.speed;
             }
@@ -67,6 +89,7 @@ int main()
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
                 vy = ctrl.speed;
             }
+#endif
 
             // write through reference -> modifies actual stored Velocity
             vel.vx = vx;
@@ -101,7 +124,11 @@ int main()
             auto const & d = draw_opt.value();
             shape.setSize(sf::Vector2f(d.width, d.height));
             shape.setFillColor(sf::Color(d.color.r, d.color.g, d.color.b, d.color.a));
+#if defined(SFML_VERSION_MAJOR) && (SFML_VERSION_MAJOR >= 3)
+            shape.setPosition(sf::Vector2f(p.x, p.y));
+#else
             shape.setPosition(p.x, p.y);
+#endif
             window.draw(shape);
         }
     });
@@ -109,11 +136,31 @@ int main()
     // Main loop
     while (window.isOpen()) {
         // Event handling
+#if defined(SFML_VERSION_MAJOR) && (SFML_VERSION_MAJOR >= 3)
+        // SFML 3: pollEvent returns std::optional<sf::Event>, and Event is a wrapper around sub-events.
+        while (auto eventOpt = window.pollEvent()) {
+            auto event = *eventOpt;
+            // Closed event
+            if (event.is<sf::Event::Closed>()) {
+                window.close();
+                continue;
+            }
+            // Key pressed event
+            if (event.is<sf::Event::KeyPressed>()) {
+                if (auto keyEventPtr = event.getIf<sf::Event::KeyPressed>()) {
+                    if (keyEventPtr->code == sf::Keyboard::Key::Escape)
+                        window.close();
+                }
+            }
+        }
+#else
+        // SFML 2: classic event loop
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) window.close();
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) window.close();
         }
+#endif
 
         // Run all systems in registration order: control -> position -> draw
         window.clear(sf::Color::Black);

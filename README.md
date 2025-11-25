@@ -10,7 +10,7 @@ Requirements:
 - CMake (>= 3.15 recommended)
 - SFML (graphics, window, system) -- development package
 - On Linux: build tools (make, ninja, etc.)
-- On Windows: Visual Studio, or MSYS2/MinGW, or use vcpkg
+- On Windows: Visual Studio, or MSYS2/MinGW (recommended here), or use vcpkg
 
 Linux (example with out-of-tree build)
 ```sh
@@ -26,6 +26,67 @@ cmake --build build --config Release
 ./build/src/bs-rtype
 ```
 
+Windows (MSYS2 / MinGW-w64 recommended)
+This project includes helper scripts that make a portable `build/dist` containing the exe and required non-system DLLs and creates a Windows shortcut in the repository root.
+
+1) Install MSYS2 and open the "MSYS2 MinGW 64‑bit" shell:
+   - https://www.msys2.org/
+
+2) Update MSYS2 and install packages (run in the MSYS2 MinGW 64‑bit shell):
+```sh
+# Update packages (may require restarting the shell)
+pacman -Syu
+# After first update, re-open the MSYS2 MinGW 64-bit shell and continue:
+pacman -Su
+
+# Install toolchain, CMake, Ninja, SFML and helpers
+pacman -S --needed \
+  base-devel \
+  mingw-w64-x86_64-toolchain \
+  mingw-w64-x86_64-cmake \
+  mingw-w64-x86_64-ninja \
+  mingw-w64-x86_64-pkg-config \
+  mingw-w64-x86_64-sfml \
+  mingw-w64-x86_64-gdb \
+  mingw-w64-x86_64-zip \
+  mingw-w64-x86_64-git
+```
+
+3) Build the project (from the repo root in MSYS2 MinGW64 shell):
+```sh
+# Clean previous build
+rm -rf build
+
+# Configure — help CMake find the MSYS2/mingw64 libs
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/mingw64 -G Ninja
+
+# Build the executable
+cmake --build build --config Release --target bs-rtype
+```
+
+4) Create a distributable `build/dist` (script + CMake target)
+- The repo provides `tools/make_dist.sh` and a CMake `dist` target. The script:
+  - Uses `ldd` to discover runtime DLLs,
+  - Copies the exe and required non-system DLLs into `build/dist`,
+  - Creates `bs-rtype.lnk` (Windows shortcut) in the repository root for easy double-click launching.
+
+Run:
+```sh
+cmake --build build --config Release --target dist
+```
+
+After this:
+- Double-click `build/dist/bs-rtype.exe` in Explorer, or
+- Double-click `bs-rtype.lnk` in the repository root (shortcut created by the script).
+
+Important: do NOT bundle Windows system DLLs into `dist` (examples: `ntdll.dll`, `kernel32.dll`, `opengl32.dll`, `user32.dll`, `gdi32.dll`, `msvcrt.dll`, etc.). The build scripts skip these automatically because bundling system DLLs breaks context creation and will make the app fail on other machines.
+
+If you want to run the dist script manually instead of via CMake:
+```sh
+chmod +x tools/make_dist.sh
+./tools/make_dist.sh build/src/bs-rtype.exe
+```
+
 Windows (Visual Studio / vcpkg example)
 - With vcpkg:
   1. Install SFML via vcpkg:
@@ -33,14 +94,15 @@ Windows (Visual Studio / vcpkg example)
   2. Configure with vcpkg toolchain:
      - cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
      - cmake --build build --config Release
-     - .\\build\\Release\\bs-rtype.exe
+     - .\build\Release\bs-rtype.exe
 
 - Without vcpkg:
   - Download the SFML SDK for your compiler (MSVC / MinGW) and set SFML_DIR to the package's cmake folder, or set CMAKE_PREFIX_PATH to point to SFML before running cmake.
 
 Notes:
-- If SFML is installed in a custom location, set -DSFML_DIR=/path/to/SFML to help find_package(SFML ...) locate it.
-- If you want static SFML on Windows, pass -DBUILD_SHARED_SFML=OFF; you may also need to link SFML dependencies manually (see comments in src/CMakeLists.txt).
+- If SFML is installed in a custom location, set -DSFML_DIR=/path/to/SFML or -DCMAKE_PREFIX_PATH to help CMake locate it.
+- If linking errors appear on MSYS2, make sure `mingw-w64-x86_64-sfml` is installed and you passed `-DCMAKE_PREFIX_PATH=/mingw64` to cmake.
+- The repo provides both a robust MSYS2 shell-based script (`tools/make_dist.sh`) and a CMake-based fallback (`cmake/PrepareDist.cmake`). The dist target will use the shell script when MSYS2 bash is available and fallback to the CMake script otherwise.
 
 ## High-level architecture
 
