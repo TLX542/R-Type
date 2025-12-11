@@ -67,11 +67,20 @@ bool GameClient::connect(const std::string& username) {
 
         // Setup UDP
         _udpSocket.open(asio::ip::udp::v4());
+        
+        // Set socket to non-blocking mode
+        _udpSocket.non_blocking(true);
+        
         asio::ip::udp::resolver udpResolver(_ioContext);
         auto udpEndpoints = udpResolver.resolve(asio::ip::udp::v4(), _host, std::to_string(_udpPort));
         _udpEndpoint = *udpEndpoints.begin();
 
+        std::cout << "[Client] UDP socket configured for "
+                  << _udpEndpoint.address().to_string() << ":"
+                  << _udpEndpoint.port() << std::endl;
+
         // Send initial UDP packet to establish connection
+        std::cout << "[Client] Sending initial UDP packet..." << std::endl;
         sendInput(0, 0, 0);
 
         _connected = true;
@@ -120,6 +129,7 @@ void GameClient::update() {
     }
 
     // Process all available UDP packets (non-blocking)
+    int packetsProcessed = 0;
     while (true) {
         std::error_code ec;
         size_t available = _udpSocket.available(ec);
@@ -135,7 +145,13 @@ void GameClient::update() {
             ec
         );
 
-        if (ec || length < sizeof(PacketHeader)) {
+        if (ec) {
+            std::cerr << "[Client] UDP receive error: " << ec.message() << std::endl;
+            continue;
+        }
+        
+        if (length < sizeof(PacketHeader)) {
+            std::cerr << "[Client] Packet too small: " << length << " bytes" << std::endl;
             continue;
         }
 
@@ -145,26 +161,39 @@ void GameClient::update() {
 
         // Validate packet
         if (!validatePacket(header, length)) {
+            std::cerr << "[Client] Invalid packet received" << std::endl;
             continue;
         }
+
+        packetsProcessed++;
 
         // Handle packet based on type
         switch (header.type) {
             case ENTITY_SPAWN:
+                std::cout << "[Client] Processing ENTITY_SPAWN packet" << std::endl;
                 handleEntitySpawn(_udpBuffer);
                 break;
             case ENTITY_UPDATE:
+                std::cout << "[Client] Processing ENTITY_UPDATE packet" << std::endl;
                 handleEntityUpdate(_udpBuffer);
                 break;
             case ENTITY_BATCH_UPDATE:
+                std::cout << "[Client] Processing ENTITY_BATCH_UPDATE packet" << std::endl;
                 handleEntityBatchUpdate(_udpBuffer);
                 break;
             case ENTITY_DESTROY:
+                std::cout << "[Client] Processing ENTITY_DESTROY packet" << std::endl;
                 handleEntityDestroy(_udpBuffer);
                 break;
             default:
+                std::cerr << "[Client] Unknown packet type: " << (int)header.type << std::endl;
                 break;
         }
+    }
+    
+    if (packetsProcessed > 0) {
+        std::cout << "[Client] Processed " << packetsProcessed << " packets, "
+                  << "total entities: " << _entities.size() << std::endl;
     }
 }
 
@@ -221,6 +250,8 @@ void GameClient::handleEntityBatchUpdate(const char* data) {
     uint8_t count;
     std::memcpy(&count, data + sizeof(PacketHeader), sizeof(uint8_t));
 
+    std::cout << "[Client] Batch update with " << (int)count << " entities" << std::endl;
+
     const char* entryData = data + sizeof(PacketHeader) + sizeof(uint8_t);
     
     for (uint8_t i = 0; i < count; ++i) {
@@ -232,6 +263,8 @@ void GameClient::handleEntityBatchUpdate(const char* data) {
             it->second.x = entry.posX;
             it->second.y = entry.posY;
             it->second.health = entry.health;
+        } else {
+            std::cerr << "[Client] Received update for unknown entity: " << entry.networkId << std::endl;
         }
     }
 }

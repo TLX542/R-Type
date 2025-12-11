@@ -211,13 +211,16 @@ void Server::doReceiveUDP() {
         _udpSenderEndpoint,
         [this](std::error_code ec, std::size_t length) {
             if (!ec && length > 0) {
+                std::cout << "[UDP] Received packet from "
+                          << _udpSenderEndpoint.address().to_string() << ":"
+                          << _udpSenderEndpoint.port() 
+                          << " (" << length << " bytes)" << std::endl;
                 handleUDPPacket(_udpBuffer, length, _udpSenderEndpoint);
+            } else if (ec) {
+                std::cerr << "[UDP] Receive error: " << ec.message() << std::endl;
             }
 
-            // Continue à écouter
-            std::cout << "[UDP] Received packet from "
-                      << _udpSenderEndpoint.address().to_string() << ":"
-                      << _udpSenderEndpoint.port() << std::endl;
+            // Continue listening
             doReceiveUDP();
         });
 }
@@ -266,6 +269,9 @@ void Server::handleUDPPacket(const char* data, size_t length,
                   << " endpoint initialized: "
                   << senderEndpoint.address().to_string() << ":"
                   << senderEndpoint.port() << std::endl;
+        
+        // Notify game logic that UDP is ready
+        onPlayerUdpReady(clientSession->getClientInfo().playerId);
     }
 
     // Traiter le paquet selon son type

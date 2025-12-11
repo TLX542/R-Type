@@ -38,8 +38,13 @@ int main(int argc, char** argv) {
     std::cout << "ESC: Quit" << std::endl;
     std::cout << "================\n" << std::endl;
 
+    // Frame counter for periodic logging
+    int frameCount = 0;
+
     // Main loop
+    std::cout << "[Render] Entering main loop" << std::endl;
     while (window.isOpen()) {
+        frameCount++;
         // Process events
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -78,16 +83,38 @@ int main(int argc, char** argv) {
         // Update client (receive world state)
         client.update();
 
+        // Periodic logging (every 60 frames = ~1 second at 60 FPS)
+        if (frameCount % 60 == 0) {
+            std::cout << "[Render] Frame " << frameCount 
+                      << ", entities: " << client.getEntities().size() << std::endl;
+        }
+
         // Render
         window.clear(sf::Color::Black);
 
         // Draw all entities
         sf::RectangleShape shape;
+        int drawnCount = 0;
         for (const auto& [networkId, entity] : client.getEntities()) {
             shape.setSize(sf::Vector2f(entity.width, entity.height));
             shape.setFillColor(sf::Color(entity.r, entity.g, entity.b));
             shape.setPosition(entity.x, entity.y);
             window.draw(shape);
+            drawnCount++;
+            
+            // Log first few entities on frame 1 for debugging
+            if (frameCount == 1) {
+                std::cout << "[Render] Drawing entity " << networkId 
+                          << " at (" << entity.x << ", " << entity.y << ")"
+                          << " size (" << entity.width << "x" << entity.height << ")"
+                          << " color (" << (int)entity.r << "," << (int)entity.g << "," << (int)entity.b << ")"
+                          << std::endl;
+            }
+        }
+
+        // Log first frame
+        if (frameCount == 1) {
+            std::cout << "[Render] First frame drawn with " << drawnCount << " entities" << std::endl;
         }
 
         // Draw info text
@@ -98,5 +125,6 @@ int main(int argc, char** argv) {
         window.display();
     }
 
+    std::cout << "[Render] Exiting main loop" << std::endl;
     return 0;
 }

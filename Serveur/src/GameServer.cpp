@@ -148,10 +148,21 @@ void GameServer::broadcastWorldState() {
                     batchPayload.count * sizeof(EntityBatchEntry));
 
         // Send to all connected clients
+        int sentCount = 0;
         for (auto& session : _sessions) {
             if (session->getClientInfo().udpInitialized) {
                 _udpSocket.send_to(asio::buffer(packet), session->getClientInfo().udpEndpoint);
+                sentCount++;
             }
+        }
+        
+        // Log occasionally (every 60 updates = ~1 second)
+        static int updateCounter = 0;
+        updateCounter++;
+        if (updateCounter % 60 == 0) {
+            std::cout << "[GameServer] Broadcast update " << updateCounter 
+                      << ": " << (int)batchPayload.count << " entities to " 
+                      << sentCount << " clients" << std::endl;
         }
     }
 }
@@ -187,7 +198,9 @@ void GameServer::handlePlayerInput(uint8_t playerId, int8_t moveX, int8_t moveY,
 }
 
 void GameServer::onPlayerConnected(uint8_t playerId) {
-    std::cout << "[GameServer] Spawning entity for player " << (int)playerId << std::endl;
+    std::cout << "[GameServer] Player " << (int)playerId << " connected (TCP)" << std::endl;
+    std::cout << "[GameServer] Creating entity for player " << (int)playerId 
+              << " (will spawn when UDP ready)" << std::endl;
 
     // Spawn a player entity
     Entity playerEntity = _registry.spawn_entity();
@@ -214,6 +227,21 @@ void GameServer::onPlayerConnected(uint8_t playerId) {
 
     // Store mapping
     _playerEntities.insert({ playerId, playerEntity });
+    
+    std::cout << "[GameServer] Entity created for player " << (int)playerId << std::endl;
+}
+
+void GameServer::onPlayerUdpReady(uint8_t playerId) {
+    std::cout << "[GameServer] Player " << (int)playerId << " UDP ready, sending ENTITY_SPAWN" << std::endl;
+    
+    // Find player entity
+    auto it = _playerEntities.find(playerId);
+    if (it == _playerEntities.end()) {
+        std::cerr << "[GameServer] ERROR: No entity found for player " << (int)playerId << std::endl;
+        return;
+    }
+    
+    Entity playerEntity = it->second;
 
     // Send ENTITY_SPAWN to all clients
     EntitySpawnPayload spawnPayload;
@@ -249,10 +277,26 @@ void GameServer::onPlayerConnected(uint8_t playerId) {
             std::memcpy(packet.data(), &header, sizeof(PacketHeader));
             std::memcpy(packet.data() + sizeof(PacketHeader), &spawnPayload, sizeof(EntitySpawnPayload));
 
+            std::cout << "[GameServer] Broadcasting ENTITY_SPAWN for network ID " 
+                      << spawnPayload.networkId << " to " << _sessions.size() << " sessions" << std::endl;
+
+            int sentCount = 0;
             for (auto& session : _sessions) {
                 if (session->getClientInfo().udpInitialized) {
                     _udpSocket.send_to(asio::buffer(packet), session->getClientInfo().udpEndpoint);
+                    sentCount++;
+                    std::cout << "[GameServer] Sent ENTITY_SPAWN to client #" 
+                              << session->getId() << " at "
+                              << session->getClientInfo().udpEndpoint.address().to_string() << ":"
+                              << session->getClientInfo().udpEndpoint.port() << std::endl;
+                } else {
+                    std::cout << "[GameServer] Client #" << session->getId() 
+                              << " UDP not initialized yet, skipping" << std::endl;
                 }
+            }
+            
+            if (sentCount == 0) {
+                std::cerr << "[GameServer] WARNING: ENTITY_SPAWN not sent to any clients!" << std::endl;
             }
         }
     }

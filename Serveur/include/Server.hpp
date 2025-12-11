@@ -60,6 +60,7 @@ public:
     }
     virtual void onPlayerConnected(uint8_t playerId) { (void)playerId; }
     virtual void onPlayerDisconnected(uint8_t playerId) { (void)playerId; }
+    virtual void onPlayerUdpReady(uint8_t playerId) { (void)playerId; }
 
 protected:
     void doAccept();
