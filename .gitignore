@@ -9,6 +9,7 @@ Serveur/client_test
 Serveur/protocol_test
 Serveur/game_client
 Serveur/render_client
+Serveur/test_headless
 Serveur/obj/
 
 # Log files

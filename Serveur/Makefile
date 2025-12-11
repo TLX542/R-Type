@@ -68,6 +68,11 @@ RENDER_CLIENT_OBJ	=	$(RENDER_CLIENT_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 RENDER_CLIENT_BIN	=	render_client
 RENDER_CLIENT_LDFLAGS	=	$(LDFLAGS) -lsfml-graphics -lsfml-window -lsfml-system
 
+# Headless test client (no SFML, for automated testing)
+HEADLESS_CLIENT_SRC	=	test_headless_client.cpp
+HEADLESS_CLIENT_OBJ	=	$(OBJ_DIR)/test_headless_client.o $(OBJ_DIR)/GameClient.o $(OBJ_DIR)/Protocol.o
+HEADLESS_CLIENT_BIN	=	test_headless
+
 # Colors
 GREEN		=	\033[0;32m
 RED			=	\033[0;31m
@@ -76,11 +81,12 @@ YELLOW		=	\033[0;33m
 NC			=	\033[0m
 
 # Rules
-all: $(SERVER_BIN) $(CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN)
+all: $(SERVER_BIN) $(CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN) $(HEADLESS_CLIENT_BIN)
 	@echo "$(GREEN)✓ Build complete!$(NC)"
 	@echo "$(BLUE)Server: ./$(SERVER_BIN) <tcp_port> <udp_port>$(NC)"
 	@echo "$(BLUE)Render Client: ./$(RENDER_CLIENT_BIN) <host> <tcp_port>$(NC)"
 	@echo "$(BLUE)Game Client: ./$(INTERACTIVE_BIN) <host> <tcp_port>$(NC)"
+	@echo "$(BLUE)Headless Test: ./$(HEADLESS_CLIENT_BIN) <host> <tcp_port>$(NC)"
 
 $(SERVER_BIN): $(SERVER_OBJ)
 	@echo "$(YELLOW)Linking $(SERVER_BIN)...$(NC)"
@@ -102,7 +108,17 @@ $(RENDER_CLIENT_BIN): $(RENDER_CLIENT_OBJ)
 	@$(CXX) $(RENDER_CLIENT_OBJ) -o $(RENDER_CLIENT_BIN) $(RENDER_CLIENT_LDFLAGS)
 	@echo "$(GREEN)✓ $(RENDER_CLIENT_BIN) created$(NC)"
 
+$(HEADLESS_CLIENT_BIN): $(HEADLESS_CLIENT_OBJ)
+	@echo "$(YELLOW)Linking $(HEADLESS_CLIENT_BIN)...$(NC)"
+	@$(CXX) $(HEADLESS_CLIENT_OBJ) -o $(HEADLESS_CLIENT_BIN) $(LDFLAGS)
+	@echo "$(GREEN)✓ $(HEADLESS_CLIENT_BIN) created$(NC)"
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
+	@echo "$(BLUE)Compiling $<...$(NC)"
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(OBJ_DIR)
 	@echo "$(BLUE)Compiling $<...$(NC)"
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -114,7 +130,7 @@ clean:
 
 fclean: clean
 	@echo "$(RED)Cleaning binaries...$(NC)"
-	@rm -f $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN)
+	@rm -f $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN) $(HEADLESS_CLIENT_BIN)
 	@echo "$(GREEN)✓ Full clean complete$(NC)"
 
 re: fclean all

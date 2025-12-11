@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
 
     // Frame counter for periodic logging
     int frameCount = 0;
+    static const bool VERBOSE_LOGGING = false;
 
     // Main loop
     std::cout << "[Render] Entering main loop" << std::endl;
@@ -84,7 +85,7 @@ int main(int argc, char** argv) {
         client.update();
 
         // Periodic logging (every 60 frames = ~1 second at 60 FPS)
-        if (frameCount % 60 == 0) {
+        if (VERBOSE_LOGGING && frameCount % 60 == 0) {
             std::cout << "[Render] Frame " << frameCount 
                       << ", entities: " << client.getEntities().size() << std::endl;
         }
@@ -103,7 +104,7 @@ int main(int argc, char** argv) {
             drawnCount++;
             
             // Log first few entities on frame 1 for debugging
-            if (frameCount == 1) {
+            if (VERBOSE_LOGGING && frameCount == 1) {
                 std::cout << "[Render] Drawing entity " << networkId 
                           << " at (" << entity.x << ", " << entity.y << ")"
                           << " size (" << entity.width << "x" << entity.height << ")"
@@ -112,9 +113,9 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Log first frame
-        if (frameCount == 1) {
-            std::cout << "[Render] First frame drawn with " << drawnCount << " entities" << std::endl;
+        // Log first frame and when entities change
+        if (frameCount == 1 || (frameCount < 120 && drawnCount > 0 && frameCount % 60 == 0)) {
+            std::cout << "[Render] Frame " << frameCount << ": Drawing " << drawnCount << " entities" << std::endl;
         }
 
         // Draw info text

@@ -128,6 +128,9 @@ void GameClient::update() {
         return;
     }
 
+    // Set to true for verbose packet logging
+    static const bool VERBOSE_LOGGING = false;
+
     // Process all available UDP packets (non-blocking)
     int packetsProcessed = 0;
     while (true) {
@@ -170,19 +173,19 @@ void GameClient::update() {
         // Handle packet based on type
         switch (header.type) {
             case ENTITY_SPAWN:
-                std::cout << "[Client] Processing ENTITY_SPAWN packet" << std::endl;
+                if (VERBOSE_LOGGING) std::cout << "[Client] Processing ENTITY_SPAWN packet" << std::endl;
                 handleEntitySpawn(_udpBuffer);
                 break;
             case ENTITY_UPDATE:
-                std::cout << "[Client] Processing ENTITY_UPDATE packet" << std::endl;
+                if (VERBOSE_LOGGING) std::cout << "[Client] Processing ENTITY_UPDATE packet" << std::endl;
                 handleEntityUpdate(_udpBuffer);
                 break;
             case ENTITY_BATCH_UPDATE:
-                std::cout << "[Client] Processing ENTITY_BATCH_UPDATE packet" << std::endl;
+                if (VERBOSE_LOGGING) std::cout << "[Client] Processing ENTITY_BATCH_UPDATE packet" << std::endl;
                 handleEntityBatchUpdate(_udpBuffer);
                 break;
             case ENTITY_DESTROY:
-                std::cout << "[Client] Processing ENTITY_DESTROY packet" << std::endl;
+                if (VERBOSE_LOGGING) std::cout << "[Client] Processing ENTITY_DESTROY packet" << std::endl;
                 handleEntityDestroy(_udpBuffer);
                 break;
             default:
@@ -191,7 +194,7 @@ void GameClient::update() {
         }
     }
     
-    if (packetsProcessed > 0) {
+    if (VERBOSE_LOGGING && packetsProcessed > 0) {
         std::cout << "[Client] Processed " << packetsProcessed << " packets, "
                   << "total entities: " << _entities.size() << std::endl;
     }
@@ -247,10 +250,14 @@ void GameClient::handleEntityUpdate(const char* data) {
 }
 
 void GameClient::handleEntityBatchUpdate(const char* data) {
+    static const bool VERBOSE_LOGGING = false;
+
     uint8_t count;
     std::memcpy(&count, data + sizeof(PacketHeader), sizeof(uint8_t));
 
-    std::cout << "[Client] Batch update with " << (int)count << " entities" << std::endl;
+    if (VERBOSE_LOGGING) {
+        std::cout << "[Client] Batch update with " << (int)count << " entities" << std::endl;
+    }
 
     const char* entryData = data + sizeof(PacketHeader) + sizeof(uint8_t);
     
