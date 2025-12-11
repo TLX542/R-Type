@@ -213,7 +213,7 @@ void GameServer::onPlayerConnected(uint8_t playerId) {
     _registry.add_component<PlayerOwner>(playerEntity, PlayerOwner{playerId});
 
     // Store mapping
-    _playerEntities[playerId] = playerEntity;
+    _playerEntities.insert({ playerId, playerEntity });
 
     // Send ENTITY_SPAWN to all clients
     EntitySpawnPayload spawnPayload;

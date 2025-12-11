@@ -76,12 +76,11 @@ YELLOW		=	\033[0;33m
 NC			=	\033[0m
 
 # Rules
-all: $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN)
+all: $(SERVER_BIN) $(CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN)
 	@echo "$(GREEN)✓ Build complete!$(NC)"
 	@echo "$(BLUE)Server: ./$(SERVER_BIN) <tcp_port> <udp_port>$(NC)"
 	@echo "$(BLUE)Render Client: ./$(RENDER_CLIENT_BIN) <host> <tcp_port>$(NC)"
 	@echo "$(BLUE)Game Client: ./$(INTERACTIVE_BIN) <host> <tcp_port>$(NC)"
-	@echo "$(BLUE)Protocol Test: ./$(TEST_CLIENT_BIN) <host> <tcp_port>$(NC)"
 
 $(SERVER_BIN): $(SERVER_OBJ)
 	@echo "$(YELLOW)Linking $(SERVER_BIN)...$(NC)"
@@ -92,11 +91,6 @@ $(CLIENT_BIN): $(CLIENT_OBJ)
 	@echo "$(YELLOW)Linking $(CLIENT_BIN)...$(NC)"
 	@$(CXX) $(CLIENT_OBJ) -o $(CLIENT_BIN) $(LDFLAGS)
 	@echo "$(GREEN)✓ $(CLIENT_BIN) created$(NC)"
-
-$(TEST_CLIENT_BIN): $(TEST_CLIENT_OBJ)
-	@echo "$(YELLOW)Linking $(TEST_CLIENT_BIN)...$(NC)"
-	@$(CXX) $(TEST_CLIENT_OBJ) -o $(TEST_CLIENT_BIN) $(LDFLAGS)
-	@echo "$(GREEN)✓ $(TEST_CLIENT_BIN) created$(NC)"
 
 $(INTERACTIVE_BIN): $(INTERACTIVE_OBJ)
 	@echo "$(YELLOW)Linking $(INTERACTIVE_BIN)...$(NC)"
