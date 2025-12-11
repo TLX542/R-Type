@@ -1,29 +1,99 @@
-# My-Type -- Minimal ECS demo (SFML)
+# R-Type -- ECS-Based Multiplayer Game
 
-A small, self-contained Entity-Component-System (ECS) demo written in C++17.  
-This repository demonstrates a compact registry, a conservative sparse-backed hybrid storage, an optional-reference proxy, and a tiny indexed zipper helper for iterating aligned component slots. The demo uses SFML to render a controllable entity and static drawables.
+A multiplayer game built with Entity-Component-System (ECS) architecture in C++17.  
+This repository demonstrates a server-authoritative architecture with a shared game library, dedicated game server, and thin clients. The ECS implementation features a compact registry, sparse-backed hybrid storage, optional-reference proxy, and indexed zipper for component iteration.
+
+## Architecture Overview
+
+The project is split into three main components:
+
+1. **libgame** (`src/game/`) - Shared game logic library containing:
+   - ECS game simulation (Game.hpp/Game.cpp)
+   - Entity state management
+   - Game snapshot serialization
+   - Physics and game rules
+
+2. **r-type-server** (`Serveur/`) - Authoritative game server:
+   - Runs the game loop at 60Hz (configurable)
+   - Accepts TCP connections for player authentication
+   - Receives player input via UDP
+   - Broadcasts game state snapshots to all clients
+   - Manages player entities and game state
+
+3. **r-type-client** (`src/client/`) - Thin client for rendering:
+   - Connects to server via TCP
+   - Sends player input via UDP
+   - Receives and renders game state snapshots
+   - Uses SFML for graphics and input
+
+4. **bs-rtype** (`src/`) - Original standalone demo (for reference)
 
 ## Quick start (CMake)
 
-Requirements:
+### Requirements
 - C++17 toolchain (g++, clang, or MSVC)
 - CMake (>= 3.15 recommended)
 - SFML (graphics, window, system) -- development package
+- ASIO (standalone or Boost.Asio) -- for networking
 - On Linux: build tools (make, ninja, etc.)
 - On Windows: Visual Studio, or MSYS2/MinGW, or use vcpkg
 
-Linux (example with out-of-tree build)
-```sh
-# install dependencies (Ubuntu example)
-sudo apt update
-sudo apt install -y build-essential cmake libsfml-dev
+### Linux Build Instructions
 
-# configure and build
+```sh
+# Install dependencies (Ubuntu example)
+sudo apt update
+sudo apt install -y build-essential cmake libsfml-dev libasio-dev
+
+# Configure and build all targets
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 
-# run
-./build/src/bs-rtype
+# This produces three executables:
+# - r-type-server (game server)
+# - r-type-client (game client)
+# - bs-rtype (original standalone demo)
+```
+
+### Running the Server and Client
+
+**Start the server:**
+```sh
+./r-type-server <tcp_port> <udp_port>
+
+# Example:
+./r-type-server 4242 4243
+```
+
+The server will:
+- Listen for TCP connections on port 4242
+- Listen for UDP packets on port 4243
+- Run the game loop at 60Hz
+- Broadcast game state to all connected clients
+
+**Connect a client:**
+```sh
+./r-type-client <server_host> <tcp_port>
+
+# Example (connect to localhost):
+./r-type-client localhost 4242
+```
+
+The client will:
+- Connect to the server via TCP
+- Authenticate and receive a player ID
+- Send input to the server via UDP
+- Render the game state received from the server
+
+**Controls:**
+- Arrow keys or ZQSD: Move player
+- Space: Shoot
+- Escape: Quit
+
+### Running the standalone demo
+```sh
+# For the original ECS demo (no networking):
+./bs-rtype
 ```
 
 Windows (Visual Studio / vcpkg example)
@@ -95,6 +165,41 @@ Notes on the flow:
   - Read optional copies produced by zipper and act when values are present.
   - Or obtain storage references from registry and call get_ref(id) to mutate component slots (e.g., control_system writing Velocity).
 - The draw system typically reads Position + Drawable and issues SFML draw calls; position_system reads Velocity + Position and mutates Position via get_ref.
+
+## Networking Protocol
+
+### Connection Flow
+1. **TCP Connection**: Client connects and sends `CONNECT` message with username
+2. **Authentication**: Server validates and responds with `CONNECT_OK` containing player ID, session token, and UDP port
+3. **UDP Initialization**: Client sends `PING` to establish UDP connection
+4. **Game Loop**: 
+   - Client sends player input via UDP (60Hz)
+   - Server processes input and updates game state (60Hz)
+   - Server broadcasts game snapshots via UDP (30Hz)
+
+### Message Types
+
+**TCP Messages** (text-based):
+- `CONNECT username=<name> version=<ver>` - Initial connection request
+- `CONNECT_OK id=<id> token=<token> udp_port=<port>` - Connection success
+- `PLAYER_JOIN id=<id> username=<name>` - Broadcast when player joins
+- `PLAYER_LEAVE id=<id>` - Broadcast when player leaves
+- `DISCONNECT` - Graceful disconnect request
+
+**UDP Messages** (binary):
+- `PLAYER_INPUT` - Player movement and button state
+- `ENTITY_BATCH_UPDATE` - Batch of entity positions and health
+- `PING/PONG` - Connection keepalive
+
+### Configuration
+
+Server tick rate and snapshot rate can be configured in `Serveur/src/main.cpp`:
+```cpp
+// Create game server with custom tick rate
+GameServer gameServer(&server, 120);  // 120Hz tick rate
+```
+
+The snapshot broadcast rate is currently set to half the tick rate but can be adjusted in `GameServer::gameLoop()`.
 
 
 
