@@ -90,6 +90,20 @@ The client will:
 - Space: Shoot
 - Escape: Quit
 
+### Running Tests
+
+An integration test is provided to verify server-client communication:
+
+```sh
+./tests/test_server_client.sh
+```
+
+This test:
+1. Starts the server
+2. Connects a test client
+3. Verifies authentication and player spawning
+4. Reports success/failure
+
 ### Running the standalone demo
 ```sh
 # For the original ECS demo (no networking):
