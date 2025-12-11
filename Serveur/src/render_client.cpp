@@ -11,7 +11,18 @@ int main(int argc, char** argv) {
     }
 
     std::string host = argv[1];
-    short tcpPort = std::atoi(argv[2]);
+    short tcpPort;
+    try {
+        int port = std::stoi(argv[2]);
+        if (port <= 0 || port > 65535) {
+            std::cerr << "Error: Port must be between 1 and 65535" << std::endl;
+            return 1;
+        }
+        tcpPort = static_cast<short>(port);
+    } catch (const std::exception& e) {
+        std::cerr << "Error: Invalid port number: " << argv[2] << std::endl;
+        return 1;
+    }
 
     // Ask for username
     std::string username;
