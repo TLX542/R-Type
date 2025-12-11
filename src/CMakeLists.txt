@@ -26,13 +26,26 @@ endif()
 target_link_libraries(bs-rtype PRIVATE sfml-graphics sfml-window sfml-system)
 
 # -------------------------
+# On Linux: after building, copy the produced executable to the repo root
+# so there's a convenient copy at <repo-root>/bs-rtype
+# This only runs on UNIX-like systems (not on Windows).
+# -------------------------
+if(UNIX AND NOT WIN32)
+  add_custom_command(TARGET bs-rtype POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:bs-rtype>" "${CMAKE_SOURCE_DIR}/bs-rtype"
+    # use the system chmod to set the executable bit (cmake -E has no chmod subcommand)
+    COMMAND chmod +x "${CMAKE_SOURCE_DIR}/bs-rtype"
+    COMMENT "Copying bs-rtype executable to repository root"
+  )
+endif()
+
+# -------------------------
 # dist target (windows only)
 # -------------------------
 if(WIN32)
   find_program(MSYS_BASH_EXECUTABLE NAMES bash.exe bash HINTS "C:/msys64/usr/bin" "C:/msys2/usr/bin" ENV PATH)
 
   set(MAKE_DIST_SCRIPT "${CMAKE_SOURCE_DIR}/tools/make_dist.sh")
-  set(PREPARE_DIST_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/PrepareDist.cmake")
 
   if(MSYS_BASH_EXECUTABLE AND EXISTS "${MAKE_DIST_SCRIPT}")
     message(STATUS "MSYS bash found: ${MSYS_BASH_EXECUTABLE}. dist will use tools/make_dist.sh")
@@ -43,16 +56,6 @@ if(WIN32)
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     )
   else()
-    message(STATUS "No MSYS bash found or make_dist.sh missing. dist will use PrepareDist.cmake fallback")
-    add_custom_target(dist
-      DEPENDS bs-rtype
-      COMMENT "Create ${CMAKE_BINARY_DIR}/dist with executable and required DLLs (via PrepareDist.cmake)"
-      COMMAND ${CMAKE_COMMAND}
-              -DEXECUTABLE=$<TARGET_FILE:bs-rtype>
-              -P ${PREPARE_DIST_SCRIPT}
-    )
+    message(STATUS "tools/make_dist.sh not found or MSYS bash unavailable; dist target will not be created. To enable, ensure tools/make_dist.sh exists and MSYS bash is on PATH.")
   endif()
-
-  # NOTE: Previously we generated a run_bs-rtype.bat in the repo root. That is removed.
-  # The tools/make_dist.sh now creates a .lnk shortcut in the repo root instead.
 endif()

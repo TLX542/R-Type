@@ -2,6 +2,3 @@ bs-rtype
 obj
 .vscode
 build
-dist
-*.exe
-*.lnk

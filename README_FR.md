@@ -42,7 +42,6 @@ Remarques :
 - Si SFML est installé dans un emplacement personnalisé, définissez -DSFML_DIR=/chemin/vers/SFML pour aider find_package(SFML ...) à le localiser.
 - Si vous souhaitez utiliser SFML statique sous Windows, ajoutez -DBUILD_SHARED_SFML=OFF. Il vous faudra peut-être également lier manuellement les dépendances SFML (voir les commentaires dans src/CMakeLists.txt).
 
-```
 Contrôles
 - Flèches / ZQSD -- déplacer le joueur
 - Échap -- quitter
