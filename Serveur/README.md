@@ -33,6 +33,7 @@ make
 - **[doc/PROTOCOL.md](doc/PROTOCOL.md)** - Network protocol
 - **[doc/TCP_UDP_ARCHITECTURE.md](doc/TCP_UDP_ARCHITECTURE.md)** - TCP/UDP design
 - **[doc/CONNEXION_PROTOCOL.md](doc/CONNEXION_PROTOCOL.md)** - Connection flow
+- **[doc/TROUBLESHOOTING.md](doc/TROUBLESHOOTING.md)** - Troubleshooting guide
 
 ## Components
 
@@ -62,6 +63,11 @@ Authoritative game server that:
 - Protocol testing tool
 - Sends test packets
 - Validates responses
+
+**`test_headless`** (Automated Testing):
+- Headless test client (no GUI)
+- Verifies server/client communication
+- Useful for CI/CD and debugging
 
 ## Network Architecture
 
@@ -263,6 +269,8 @@ io_context.run(); // Boucle d'événements
 - Player movement and input handling
 - Entity synchronization between clients
 - Multi-player support (up to 4 players)
+- Fixed black screen bug (UDP timing issue)
+- Automated testing with headless client
 
 🚧 **In Progress / TODO:**
 - Shooting mechanics
@@ -272,3 +280,16 @@ io_context.run(); // Boucle d'événements
 - Power-ups
 - Game rooms/lobbies
 - Score tracking
+
+## Known Issues (Fixed)
+
+### Black Screen Bug - FIXED ✅
+**Issue**: Client showed black screen despite successful connection.
+
+**Cause**: ENTITY_SPAWN packets were sent during TCP connection before the client's UDP endpoint was initialized, causing packets to never reach the client.
+
+**Fix**: Implemented two-stage connection:
+1. TCP phase: Player authenticated, entity created
+2. UDP phase: When first UDP packet received, ENTITY_SPAWN broadcast sent
+
+See [doc/TROUBLESHOOTING.md](doc/TROUBLESHOOTING.md) for details and debugging steps.
