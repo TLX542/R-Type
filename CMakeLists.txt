@@ -9,11 +9,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Option to choose whether to link SFML dynamically (default ON)
 option(BUILD_SHARED_SFML "Link SFML dynamically (ON) or statically (OFF)" ON)
 
-# If you want a multi-config generator, CMake will honor --config at build time.
-# Add the src subdirectory which builds the bs-rtype executable.
+# Add subdirectories
+# 1. Game library (shared game logic)
+add_subdirectory(src/game)
+
+# 2. Server executable
+add_subdirectory(Serveur)
+
+# 3. Client executable
+add_subdirectory(src/client)
+
+# 4. Original src directory (for backwards compatibility with bs-rtype)
 add_subdirectory(src)
 
-# Install target (optional)
-install(TARGETS bs-rtype
+# Install targets
+install(TARGETS bs-rtype r-type-server r-type-client
   RUNTIME DESTINATION bin
 )

@@ -1,4 +1,5 @@
 #include "../include/Server.hpp"
+#include "../include/GameServer.hpp"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -74,6 +75,11 @@ void Session::handleMessage(const std::string& message) {
         std::cout << "[TCP] Client #" << _clientId << " (" << username << ") authenticated"
                   << " | Player ID: " << (int)_clientInfo.playerId
                   << " | Token: 0x" << ss.str() << std::endl;
+
+        // Notify game server to spawn player
+        if (_server->getGameServer()) {
+            _server->getGameServer()->addPlayer(_clientInfo.playerId);
+        }
 
         // Notifier les autres joueurs
         TCPProtocol::Message joinMsg;
@@ -159,7 +165,8 @@ Server::Server(asio::io_context& io_context, short tcpPort, short udpPort)
       _acceptor(io_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), tcpPort)),
       _udpSocket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), udpPort)),
       _udpPort(udpPort),
-      _nextClientId(1) {
+      _nextClientId(1),
+      _gameServer(nullptr) {
 
     // Initialiser le générateur aléatoire
     std::random_device rd;
@@ -289,7 +296,11 @@ void Server::handleUDPPacket(const char* data, size_t length,
                               << std::endl;
                 }
 
-                // TODO: Appliquer l'input à l'ECS du serveur
+                // Forward input to game server
+                if (_gameServer) {
+                    _gameServer->handlePlayerInput(payload.playerId, payload.moveX, payload.moveY, 
+                                                   payload.buttons, payload.timestamp);
+                }
             }
             break;
         }

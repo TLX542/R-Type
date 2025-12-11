@@ -1,4 +1,8 @@
 bs-rtype
+r-type-server
+r-type-client
 obj
 .vscode
 build
+*.o
+*.d

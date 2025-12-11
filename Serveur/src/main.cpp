@@ -1,4 +1,5 @@
 #include "../include/Server.hpp"
+#include "../include/GameServer.hpp"
 #include <iostream>
 #include <cstdlib>
 
@@ -16,7 +17,15 @@ int main(int argc, char **argv) {
         asio::io_context io_context;
         Server server(io_context, tcpPort, udpPort);
 
+        // Create game server with 60Hz tick rate
+        GameServer gameServer(&server, 60);
+        server.setGameServer(&gameServer);
+
+        // Start the game loop
+        gameServer.start();
+
         std::cout << "R-Type Server is running..." << std::endl;
+        std::cout << "Game loop started at 60 Hz" << std::endl;
         std::cout << "Waiting for clients to connect..." << std::endl;
 
         server.run();

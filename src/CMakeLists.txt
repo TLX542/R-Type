@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 
-# Collect all source files in src/
-file(GLOB_RECURSE PROJECT_SOURCES
-    "${CMAKE_SOURCE_DIR}/src/*.cpp"
-    "${CMAKE_SOURCE_DIR}/src/*.c"
+# Collect only main.cpp for the original bs-rtype executable
+# Exclude subdirectories (game/ and client/) which have their own targets
+set(PROJECT_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 )
 
 if (PROJECT_SOURCES STREQUAL "")

@@ -52,6 +52,14 @@ public:
     short getUdpPort() const { return _udpPort; }
     size_t getClientCount() const { return _sessions.size(); }
     void broadcastMessage(const std::string& message, int excludeClientId = -1);
+    
+    // Accessors for GameServer integration
+    const std::vector<std::shared_ptr<Session>>& getSessions() const { return _sessions; }
+    asio::ip::udp::socket& getUdpSocket() { return _udpSocket; }
+    
+    // Set game server for input handling
+    void setGameServer(class GameServer* gs) { _gameServer = gs; }
+    class GameServer* getGameServer() const { return _gameServer; }
 
 private:
     void doAccept();
@@ -66,6 +74,7 @@ private:
     std::vector<std::shared_ptr<Session>> _sessions;
     int _nextClientId;
     std::mt19937 _randomGenerator;
+    class GameServer* _gameServer;  // Pointer to game server for input handling
 
     // Buffer pour UDP
     enum { udp_buffer_size = 1024 };
