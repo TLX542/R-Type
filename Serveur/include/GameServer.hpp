@@ -31,8 +31,11 @@ public:
     // Process player input and apply to ECS
     void handlePlayerInput(uint8_t playerId, int8_t moveX, int8_t moveY, uint8_t buttons);
 
-    // Called when a client connects and is authenticated
+    // Called when a client connects and is authenticated (TCP)
     void onPlayerConnected(uint8_t playerId);
+
+    // Called when a client's UDP connection is ready
+    void onPlayerUdpReady(uint8_t playerId);
 
     // Called when a client disconnects
     void onPlayerDisconnected(uint8_t playerId);

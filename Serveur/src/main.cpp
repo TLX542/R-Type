@@ -10,8 +10,21 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        short tcpPort = std::atoi(argv[1]);
-        short udpPort = std::atoi(argv[2]);
+        short tcpPort;
+        short udpPort;
+        try {
+            int tcp = std::stoi(argv[1]);
+            int udp = std::stoi(argv[2]);
+            if (tcp <= 0 || tcp > 65535 || udp <= 0 || udp > 65535) {
+                std::cerr << "Error: Ports must be between 1 and 65535" << std::endl;
+                return 1;
+            }
+            tcpPort = static_cast<short>(tcp);
+            udpPort = static_cast<short>(udp);
+        } catch (const std::exception& e) {
+            std::cerr << "Error: Invalid port number" << std::endl;
+            return 1;
+        }
 
         asio::io_context io_context;
         GameServer server(io_context, tcpPort, udpPort);
