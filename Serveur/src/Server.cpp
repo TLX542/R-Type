@@ -75,6 +75,9 @@ void Session::handleMessage(const std::string& message) {
                   << " | Player ID: " << (int)_clientInfo.playerId
                   << " | Token: 0x" << ss.str() << std::endl;
 
+        // Notify game logic about new player
+        _server->onPlayerConnected(_clientInfo.playerId);
+
         // Notifier les autres joueurs
         TCPProtocol::Message joinMsg;
         joinMsg.type = TCPProtocol::PLAYER_JOIN;
@@ -124,6 +127,11 @@ void Session::doRead() {
                 doRead();
             } else {
                 std::cout << "[TCP] Client #" << _clientId << " disconnected" << std::endl;
+
+                // Notify game logic about player disconnection
+                if (_clientInfo.playerId != 0) {
+                    _server->onPlayerDisconnected(_clientInfo.playerId);
+                }
 
                 // Notifier les autres joueurs du départ
                 if (_clientInfo.playerId != 0) {
@@ -289,7 +297,8 @@ void Server::handleUDPPacket(const char* data, size_t length,
                               << std::endl;
                 }
 
-                // TODO: Appliquer l'input à l'ECS du serveur
+                // Apply input to game logic
+                handlePlayerInput(payload.playerId, payload.moveX, payload.moveY, payload.buttons);
             }
             break;
         }

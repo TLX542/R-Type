@@ -1,13 +1,69 @@
-# R-Type Server
+# R-Type Server and Client
 
-Serveur de base pour le projet R-Type utilisant ASIO pour la communication réseau.
+Server-authoritative multiplayer game using ECS (Entity-Component-System) and binary network protocol.
 
-## Fonctionnalités
+## Features
 
-- Accepte plusieurs connexions clients simultanément
-- Gère les sessions client de manière asynchrone
-- Echo des messages reçus
-- Support TCP pour la communication réseau
+- **Authoritative Server**: Game simulation runs on server using ECS
+- **Thin Clients**: Clients only send input and render state from server
+- **Binary Protocol**: Efficient UDP networking for real-time gameplay
+- **Multiplayer**: Support for up to 4 simultaneous players
+- **ECS Architecture**: Clean separation of data and logic
+
+## Quick Start
+
+See **[doc/BUILD.md](doc/BUILD.md)** for detailed build and run instructions.
+
+**TL;DR:**
+```bash
+# Build
+make
+
+# Terminal 1: Start server
+./r-type_server 4242 4243
+
+# Terminal 2+: Start client(s)
+./render_client localhost 4242
+```
+
+## Documentation
+
+- **[doc/BUILD.md](doc/BUILD.md)** - Building and running
+- **[doc/ARCHITECTURE.md](doc/ARCHITECTURE.md)** - System architecture
+- **[doc/PROTOCOL.md](doc/PROTOCOL.md)** - Network protocol
+- **[doc/TCP_UDP_ARCHITECTURE.md](doc/TCP_UDP_ARCHITECTURE.md)** - TCP/UDP design
+- **[doc/CONNEXION_PROTOCOL.md](doc/CONNEXION_PROTOCOL.md)** - Connection flow
+
+## Components
+
+### Server (`r-type_server`)
+
+Authoritative game server that:
+- Accepts TCP connections and authenticates players
+- Spawns player entities in ECS world
+- Runs game loop at 60 Hz
+- Processes player inputs via UDP
+- Broadcasts world state to all clients
+- Handles player disconnection and cleanup
+
+### Clients
+
+**`render_client`** (SFML-based, recommended):
+- Graphical client with visual rendering
+- Arrow keys to move, Space to shoot
+- Shows all players in real-time
+
+**`game_client`** (Terminal-based):
+- Text-based interactive client
+- Manual input controls
+- Good for testing
+
+**`protocol_test`** (Testing):
+- Protocol testing tool
+- Sends test packets
+- Validates responses
+
+## Network Architecture
 
 ## Prérequis
 
@@ -199,10 +255,20 @@ io_context.run(); // Boucle d'événements
 
 
 
-## Prochaines étapes
+## Current Status
 
-- Intégration avec l'ECS du projet R-Type
-- Ajout du protocole UDP pour le gameplay
-- Implémentation de la logique du jeu
-- Synchronisation des entités entre clients
-- Gestion des salles de jeu
+✅ **Completed:**
+- Server-authoritative ECS architecture
+- Binary UDP protocol for gameplay
+- Player movement and input handling
+- Entity synchronization between clients
+- Multi-player support (up to 4 players)
+
+🚧 **In Progress / TODO:**
+- Shooting mechanics
+- Enemy AI and spawning
+- Collision detection
+- Health/damage system
+- Power-ups
+- Game rooms/lobbies
+- Score tracking

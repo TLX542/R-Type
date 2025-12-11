@@ -1,4 +1,4 @@
-#include "../include/Server.hpp"
+#include "../include/GameServer.hpp"
 #include <iostream>
 #include <cstdlib>
 
@@ -14,11 +14,15 @@ int main(int argc, char **argv) {
         short udpPort = std::atoi(argv[2]);
 
         asio::io_context io_context;
-        Server server(io_context, tcpPort, udpPort);
+        GameServer server(io_context, tcpPort, udpPort);
 
-        std::cout << "R-Type Server is running..." << std::endl;
+        std::cout << "R-Type Game Server is running..." << std::endl;
         std::cout << "Waiting for clients to connect..." << std::endl;
 
+        // Start game loop in background thread
+        server.startGameLoop();
+
+        // Run network I/O
         server.run();
 
     } catch (std::exception& e) {

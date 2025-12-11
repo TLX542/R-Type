@@ -1,9 +1,119 @@
-# My-Type -- Minimal ECS demo (SFML)
+# R-Type -- Server-Authoritative ECS Game
 
-A small, self-contained Entity-Component-System (ECS) demo written in C++17.  
-This repository demonstrates a compact registry, a conservative sparse-backed hybrid storage, an optional-reference proxy, and a tiny indexed zipper helper for iterating aligned component slots. The demo uses SFML to render a controllable entity and static drawables.
+A networked multiplayer game built with a **server-authoritative architecture** using an Entity-Component-System (ECS).
 
-## Quick start (CMake)
+The project demonstrates:
+- **Authoritative server**: Game simulation runs entirely on the server using ECS
+- **Thin clients**: Clients only send input and render state from the server
+- **Binary protocol**: Efficient UDP networking for real-time gameplay
+- **ECS design**: Clean separation of data (components) and logic (systems)
+
+## Project Structure
+
+```
+R-Type/
+├── Serveur/              # Server and client implementations
+│   ├── src/              # Source files
+│   │   ├── main.cpp            # Server entry point
+│   │   ├── GameServer.cpp      # Server with ECS game loop
+│   │   ├── render_client.cpp   # SFML rendering client
+│   │   └── GameClient.cpp      # Client networking layer
+│   ├── include/          # Headers
+│   │   ├── GameServer.hpp      # Server with ECS
+│   │   ├── GameClient.hpp      # Client API
+│   │   ├── Protocol.hpp        # Network protocol
+│   │   └── [ECS headers]       # Registry, Components, etc.
+│   ├── doc/              # Documentation
+│   │   ├── ARCHITECTURE.md     # Architecture overview
+│   │   ├── BUILD.md            # Build and run instructions
+│   │   └── PROTOCOL.md         # Network protocol details
+│   └── Makefile          # Build system
+├── src/                  # Original standalone game (reference)
+├── include/              # ECS implementation headers
+└── README.md             # This file
+```
+
+## Quick Start
+
+### Prerequisites
+```bash
+# Linux (Ubuntu/Debian)
+sudo apt-get install -y build-essential libasio-dev libsfml-dev
+
+# macOS
+brew install asio sfml
+```
+
+### Build and Run
+
+**1. Build everything:**
+```bash
+cd Serveur
+make
+```
+
+**2. Start the server:**
+```bash
+./r-type_server 4242 4243
+```
+
+**3. Start client(s) in new terminal(s):**
+```bash
+./render_client localhost 4242
+```
+
+**4. Play!**
+- Use **Arrow Keys** to move your square
+- Each player gets a different color (Red, Green, Blue, Yellow)
+- Open multiple clients to see multiplayer in action
+
+## Architecture Overview
+
+### Server-Authoritative Design
+
+```
+┌──────────────────────────────────────┐
+│           SERVER (Authority)         │
+│  ┌────────────────────────────────┐  │
+│  │  ECS Game Loop (60 Hz)         │  │
+│  │  - Spawn entities              │  │
+│  │  - Process player input        │  │
+│  │  - Update positions/velocities │  │
+│  │  - Broadcast world state       │  │
+│  └────────────────────────────────┘  │
+└───────────┬──────────────────────────┘
+            │ UDP: World State
+            │ TCP: Connection
+    ┌───────┴───────┬───────────┐
+    │               │           │
+┌───▼────┐    ┌────▼───┐   ┌──▼─────┐
+│Client 1│    │Client 2│   │Client 3│
+│ Input  │    │ Input  │   │ Input  │
+│ Render │    │ Render │   │ Render │
+└────────┘    └────────┘   └────────┘
+```
+
+**Server:**
+- Runs authoritative ECS game simulation
+- Accepts player connections via TCP
+- Processes player input via UDP
+- Broadcasts world state to all clients at 60 Hz
+- No client can cheat or modify game state
+
+**Clients:**
+- Connect and authenticate via TCP
+- Send input (arrow keys) via UDP
+- Receive world state updates via UDP
+- Render entities at positions from server
+- **NO game logic** - pure input + rendering
+
+## Documentation
+
+- **[Serveur/doc/BUILD.md](Serveur/doc/BUILD.md)** - Detailed build and run instructions
+- **[Serveur/doc/ARCHITECTURE.md](Serveur/doc/ARCHITECTURE.md)** - System design and architecture
+- **[Serveur/doc/PROTOCOL.md](Serveur/doc/PROTOCOL.md)** - Network protocol specification
+
+## Quick start (Original Standalone Game)
 
 Requirements:
 - C++17 toolchain (g++, clang, or MSVC)
@@ -235,6 +345,74 @@ This section documents each public header and main source file so you can quickl
 - SFML link errors: ensure SFML development libraries are installed and pkg-config is available; inspect the Makefile for link flags.
 - Unexpected missing components: call `register_component<T>()` before adding components in main or ensure `get_components_if<T>()` is checked for nullptr before use.
 - Frame-rate dependent movement: the demo uses a fixed frame limit; multiply velocities by delta time when adapting to variable time steps.
+
+## Networked Multiplayer Architecture
+
+### How It Works
+
+**Server-Side (GameServer):**
+1. Initializes ECS registry with component storages
+2. When player connects via TCP, spawns entity with:
+   - Position (starting location)
+   - Velocity (movement speed)
+   - Drawable (visual appearance)
+   - NetworkId (unique identifier)
+   - PlayerOwner (which player controls this)
+3. Runs game loop at 60 Hz:
+   - Receives player input via UDP
+   - Updates velocity based on input
+   - Runs position system (integrates velocity)
+   - Serializes entities to binary packets
+   - Broadcasts to all clients via UDP
+
+**Client-Side (render_client):**
+1. Connects to server via TCP, gets player ID and auth token
+2. Opens UDP socket for gameplay
+3. Each frame:
+   - Reads keyboard input (arrow keys)
+   - Sends input packet to server
+   - Receives world state packets from server
+   - Updates local entity cache
+   - Renders all entities at received positions
+
+### Network Protocol
+
+**TCP (Connection):**
+- Client sends: `CONNECT username=Player1 version=1.0`
+- Server responds: `CONNECT_OK id=1 token=0xABCD1234 udp_port=4243`
+
+**UDP (Gameplay):**
+- Client → Server: `PLAYER_INPUT` (timestamp, moveX, moveY, buttons)
+- Server → Client: `ENTITY_BATCH_UPDATE` (array of entity positions)
+- Server → Client: `ENTITY_SPAWN` (new entity created)
+- Server → Client: `ENTITY_DESTROY` (entity removed)
+
+All UDP packets use binary format with:
+- PacketHeader (magic number, version, type, size)
+- Payload (struct with fixed-size fields)
+
+### Benefits
+
+✅ **Anti-cheat**: Server has full authority, clients can't modify game state  
+✅ **Consistency**: All players see the same world  
+✅ **Simple clients**: Just input + rendering, no complex game logic  
+✅ **Low bandwidth**: Binary protocol uses ~40 KB/s per client  
+✅ **Low latency**: UDP avoids TCP retransmission delays  
+
+### Extending
+
+**Add new entity type:**
+1. Define components in `Serveur/include/Components.hpp`
+2. Register components in `GameServer` constructor
+3. Spawn entities in server code
+4. Client automatically renders them
+
+**Add game mechanics:**
+- Shooting: Add bullet spawn on input, collision detection in server
+- AI enemies: Spawn enemies, run AI system on server
+- Power-ups: Spawn items, detect collision, modify player stats
+
+All game logic goes **on the server** - clients just visualize!
 
 ## License
 

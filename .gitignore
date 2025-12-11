@@ -2,3 +2,14 @@ bs-rtype
 obj
 .vscode
 build
+
+# Server binaries
+Serveur/r-type_server
+Serveur/client_test
+Serveur/protocol_test
+Serveur/game_client
+Serveur/render_client
+Serveur/obj/
+
+# Log files
+*.log
