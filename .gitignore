@@ -4,13 +4,13 @@ obj
 build
 
 # Server binaries
-Serveur/r-type_server
-Serveur/client_test
-Serveur/protocol_test
-Serveur/game_client
-Serveur/render_client
-Serveur/test_headless
-Serveur/obj/
+*r-type_server
+*client_test
+*protocol_test
+*game_client
+*render_client
+*test_headless
+*obj/
 
 # Log files
 *.log

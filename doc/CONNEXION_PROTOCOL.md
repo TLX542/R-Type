@@ -376,7 +376,7 @@ void Server::handleUDPPacket(const char* data, size_t length,
 
 ### Lancer le serveur
 ```bash
-cd Serveur/build
+cd build
 ./r-type_server 4242 4243
 ```
 

@@ -44,3 +44,17 @@ struct Controllable {
     // Get displacement (in pixels) for a given delta time in seconds
     float displacement(float dt) const { return speed * dt; }
 };
+
+// Network-specific components
+
+struct NetworkId {
+    uint32_t id{0};
+    NetworkId() = default;
+    explicit NetworkId(uint32_t i) : id(i) {}
+};
+
+struct PlayerOwner {
+    uint8_t playerId{0};
+    PlayerOwner() = default;
+    explicit PlayerOwner(uint8_t pid) : playerId(pid) {}
+};

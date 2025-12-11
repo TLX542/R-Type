@@ -23,7 +23,7 @@ echo ""
 
 # Check if we're in the right directory
 if [ ! -f "Makefile" ]; then
-    echo -e "${RED}Error: Must be run from Serveur directory${NC}"
+    echo -e "${RED}Error: Must be run from root directory${NC}"
     exit 1
 fi
 

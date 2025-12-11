@@ -34,11 +34,7 @@ brew install sfml
 
 ### Server Only
 
-Navigate to the `Serveur` directory:
-
-```bash
-cd Serveur
-```
+Navigate to the `repo root` directory:
 
 **Build the server:**
 ```bash
@@ -58,7 +54,6 @@ make re         # Clean and rebuild
 
 **Build the render client (requires SFML):**
 ```bash
-cd Serveur
 make render_client
 ```
 
@@ -68,7 +63,6 @@ This creates the `render_client` executable.
 
 **Build everything:**
 ```bash
-cd Serveur
 make
 ```
 
@@ -86,7 +80,6 @@ This builds:
 The server requires two ports: one for TCP (connection) and one for UDP (gameplay).
 
 ```bash
-cd Serveur
 ./r-type_server 4242 4243
 ```
 
@@ -113,7 +106,6 @@ The server will:
 
 In a new terminal:
 ```bash
-cd Serveur
 ./render_client localhost 4242
 ```
 
@@ -130,7 +122,6 @@ A window will open showing the game. You can control your square with:
 **Option B: Terminal Interactive Client**
 
 ```bash
-cd Serveur
 ./game_client localhost 4242
 ```
 
@@ -174,7 +165,6 @@ For a quick test, you can use this script:
 #!/bin/bash
 
 # Terminal 1: Start server
-cd Serveur
 ./r-type_server 4242 4243 &
 SERVER_PID=$!
 
@@ -258,14 +248,12 @@ brew install sfml
 For development with debug symbols:
 
 ```bash
-cd Serveur
 CXXFLAGS="-std=c++17 -g -O0" make re
 ```
 
 For release with optimizations:
 
 ```bash
-cd Serveur
 CXXFLAGS="-std=c++17 -O3 -DNDEBUG" make re
 ```
 

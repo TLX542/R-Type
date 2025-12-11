@@ -1,58 +1,169 @@
 ##
-## EPITECH PROJECT, 2023
-## Makefile
+## EPITECH PROJECT, 2024
+## R-Type Server
 ## File description:
-## Optimized Makefile
+## Makefile
 ##
 
 # Compiler and flags
-CXX = g++
-CXXFLAGS += -std=c++17 -W -Wall -Wextra -Wundef -pedantic -Wformat=2 -Wunused-function -O2 -march=native
-LDFLAGS += -lsfml-graphics -lsfml-window -lsfml-system
+CXX			=	g++
+CXXFLAGS	=	-std=c++17 -Wall -Wextra -I./include
+
+# Libraries
+LDFLAGS		=	-lpthread
+
+# Check for ASIO standalone or Boost.Asio
+ASIO_STANDALONE := $(shell echo '\#include <asio.hpp>' | $(CXX) -E -x c++ - >/dev/null 2>&1 && echo yes)
+
+ifeq ($(ASIO_STANDALONE),yes)
+    $(info Using standalone ASIO)
+    CXXFLAGS += -DASIO_STANDALONE
+else
+    $(info Trying Boost.Asio)
+    BOOST_CHECK := $(shell echo '\#include <boost/asio.hpp>' | $(CXX) -E -x c++ - >/dev/null 2>&1 && echo yes)
+    ifeq ($(BOOST_CHECK),yes)
+        $(info Using Boost.Asio)
+        LDFLAGS += -lboost_system
+    else
+        $(error Neither ASIO standalone nor Boost.Asio found. Install with: sudo apt-get install libasio-dev)
+    endif
+endif
 
 # Directories
-SRCDIR = $(shell find . -type d -name 'src')
-OBJDIR = obj
-BINDIR = .
+SRC_DIR		=	src
+OBJ_DIR		=	obj
+INC_DIR		=	include
 
-# Include paths
-INCLUDES = -I include
+# Server files
+SERVER_SRC	=	$(SRC_DIR)/Server.cpp \
+				$(SRC_DIR)/Protocol.cpp \
+				$(SRC_DIR)/GameServer.cpp \
+				$(SRC_DIR)/main.cpp
 
-# Source and object files
-SRC = $(shell find $(SRCDIR) -name '*.cpp')
-OBJ = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
+SERVER_OBJ	=	$(SERVER_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+SERVER_BIN	=	r-type_server
 
-# Binary name
-NAME = bs-rtype
+# Client test files (old simple client)
+CLIENT_SRC	=	$(SRC_DIR)/client_test.cpp
+CLIENT_OBJ	=	$(CLIENT_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+CLIENT_BIN	=	client_test
 
-# Number of cores for parallel compilation
-NPROCS = $(shell nproc)
+# Protocol test client (new)
+TEST_CLIENT_SRC	=	$(SRC_DIR)/test_client.cpp \
+					$(SRC_DIR)/Protocol.cpp
+TEST_CLIENT_OBJ	=	$(TEST_CLIENT_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+TEST_CLIENT_BIN	=	protocol_test
 
-# Main target
-all: $(BINDIR)/$(NAME)
+# Interactive client (game client)
+INTERACTIVE_SRC	=	$(SRC_DIR)/interactive_client.cpp \
+					$(SRC_DIR)/Protocol.cpp
+INTERACTIVE_OBJ	=	$(INTERACTIVE_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+INTERACTIVE_BIN	=	game_client
 
-# Linking rule
-$(BINDIR)/$(NAME): $(OBJ)
-	@mkdir -p $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $^ $(LDFLAGS)
+# Render client (SFML client)
+RENDER_CLIENT_SRC	=	$(SRC_DIR)/render_client.cpp \
+						$(SRC_DIR)/GameClient.cpp \
+						$(SRC_DIR)/Protocol.cpp
+RENDER_CLIENT_OBJ	=	$(RENDER_CLIENT_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+RENDER_CLIENT_BIN	=	render_client
+RENDER_CLIENT_LDFLAGS	=	$(LDFLAGS) -lsfml-graphics -lsfml-window -lsfml-system
 
-# Compilation rule with automatic dependencies
-$(OBJDIR)/%.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -MMD -MP -c $< -o $@
+# Headless test client (no SFML, for automated testing)
+HEADLESS_CLIENT_SRC	=	test_headless_client.cpp
+HEADLESS_CLIENT_OBJ	=	$(OBJ_DIR)/test_headless_client.o $(OBJ_DIR)/GameClient.o $(OBJ_DIR)/Protocol.o
+HEADLESS_CLIENT_BIN	=	test_headless
 
-# Include dependency files
--include $(OBJ:.o=.d)
+# Colors
+GREEN		=	\033[0;32m
+RED			=	\033[0;31m
+BLUE		=	\033[0;34m
+YELLOW		=	\033[0;33m
+NC			=	\033[0m
 
-# Clean targets
+# Rules
+all: $(SERVER_BIN) $(CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN) $(HEADLESS_CLIENT_BIN)
+	@echo "$(GREEN)✓ Build complete!$(NC)"
+	@echo "$(BLUE)Server: ./$(SERVER_BIN) <tcp_port> <udp_port>$(NC)"
+	@echo "$(BLUE)Render Client: ./$(RENDER_CLIENT_BIN) <host> <tcp_port>$(NC)"
+	@echo "$(BLUE)Game Client: ./$(INTERACTIVE_BIN) <host> <tcp_port>$(NC)"
+	@echo "$(BLUE)Headless Test: ./$(HEADLESS_CLIENT_BIN) <host> <tcp_port>$(NC)"
+
+$(SERVER_BIN): $(SERVER_OBJ)
+	@echo "$(YELLOW)Linking $(SERVER_BIN)...$(NC)"
+	@$(CXX) $(SERVER_OBJ) -o $(SERVER_BIN) $(LDFLAGS)
+	@echo "$(GREEN)✓ $(SERVER_BIN) created$(NC)"
+
+$(CLIENT_BIN): $(CLIENT_OBJ)
+	@echo "$(YELLOW)Linking $(CLIENT_BIN)...$(NC)"
+	@$(CXX) $(CLIENT_OBJ) -o $(CLIENT_BIN) $(LDFLAGS)
+	@echo "$(GREEN)✓ $(CLIENT_BIN) created$(NC)"
+
+$(INTERACTIVE_BIN): $(INTERACTIVE_OBJ)
+	@echo "$(YELLOW)Linking $(INTERACTIVE_BIN)...$(NC)"
+	@$(CXX) $(INTERACTIVE_OBJ) -o $(INTERACTIVE_BIN) $(LDFLAGS)
+	@echo "$(GREEN)✓ $(INTERACTIVE_BIN) created$(NC)"
+
+$(RENDER_CLIENT_BIN): $(RENDER_CLIENT_OBJ)
+	@echo "$(YELLOW)Linking $(RENDER_CLIENT_BIN)...$(NC)"
+	@$(CXX) $(RENDER_CLIENT_OBJ) -o $(RENDER_CLIENT_BIN) $(RENDER_CLIENT_LDFLAGS)
+	@echo "$(GREEN)✓ $(RENDER_CLIENT_BIN) created$(NC)"
+
+$(HEADLESS_CLIENT_BIN): $(HEADLESS_CLIENT_OBJ)
+	@echo "$(YELLOW)Linking $(HEADLESS_CLIENT_BIN)...$(NC)"
+	@$(CXX) $(HEADLESS_CLIENT_OBJ) -o $(HEADLESS_CLIENT_BIN) $(LDFLAGS)
+	@echo "$(GREEN)✓ $(HEADLESS_CLIENT_BIN) created$(NC)"
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(OBJ_DIR)
+	@echo "$(BLUE)Compiling $<...$(NC)"
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(OBJ_DIR)
+	@echo "$(BLUE)Compiling $<...$(NC)"
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
 clean:
-	rm -rf $(OBJDIR)
+	@echo "$(RED)Cleaning object files...$(NC)"
+	@rm -rf $(OBJ_DIR)
+	@echo "$(GREEN)✓ Clean complete$(NC)"
 
 fclean: clean
-	rm -f $(BINDIR)/$(NAME)
+	@echo "$(RED)Cleaning binaries...$(NC)"
+	@rm -f $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN) $(HEADLESS_CLIENT_BIN)
+	@echo "$(GREEN)✓ Full clean complete$(NC)"
 
-re:
-	+$(MAKE) fclean
-	+$(MAKE) all
+re: fclean all
 
-.PHONY: all clean fclean re
+# Test targets
+test_server: $(SERVER_BIN)
+	@echo "$(YELLOW)Starting server on ports TCP:4242 UDP:4243...$(NC)"
+	./$(SERVER_BIN) 4242 4243
+
+test_client: $(CLIENT_BIN)
+	@echo "$(YELLOW)Connecting to localhost:4242...$(NC)"
+	./$(CLIENT_BIN) localhost 4242
+
+test_protocol: $(TEST_CLIENT_BIN)
+	@echo "$(YELLOW)Testing protocol with localhost:4242...$(NC)"
+	./$(TEST_CLIENT_BIN) localhost 4242
+
+# Help
+help:
+	@echo "$(BLUE)R-Type Server Makefile$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Available targets:$(NC)"
+	@echo "  make           - Build server and clients"
+	@echo "  make clean     - Remove object files"
+	@echo "  make fclean    - Remove object files and binaries"
+	@echo "  make re        - Rebuild everything"
+	@echo "  make test_server   - Build and run server on ports 4242/4243"
+	@echo "  make test_client   - Build and run old test client"
+	@echo "  make test_protocol - Build and run protocol test client"
+	@echo "  make help          - Display this help"
+	@echo ""
+	@echo "$(YELLOW)Manual usage:$(NC)"
+	@echo "  ./$(SERVER_BIN) <tcp_port> <udp_port>"
+	@echo "  ./$(TEST_CLIENT_BIN) <host> <tcp_port>"
+
+.PHONY: all clean fclean re test_server test_client test_protocol help
