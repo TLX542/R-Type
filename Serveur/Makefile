@@ -37,6 +37,7 @@ INC_DIR		=	include
 # Server files
 SERVER_SRC	=	$(SRC_DIR)/Server.cpp \
 				$(SRC_DIR)/Protocol.cpp \
+				$(SRC_DIR)/GameServer.cpp \
 				$(SRC_DIR)/main.cpp
 
 SERVER_OBJ	=	$(SERVER_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
@@ -59,6 +60,14 @@ INTERACTIVE_SRC	=	$(SRC_DIR)/interactive_client.cpp \
 INTERACTIVE_OBJ	=	$(INTERACTIVE_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 INTERACTIVE_BIN	=	game_client
 
+# Render client (SFML client)
+RENDER_CLIENT_SRC	=	$(SRC_DIR)/render_client.cpp \
+						$(SRC_DIR)/GameClient.cpp \
+						$(SRC_DIR)/Protocol.cpp
+RENDER_CLIENT_OBJ	=	$(RENDER_CLIENT_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+RENDER_CLIENT_BIN	=	render_client
+RENDER_CLIENT_LDFLAGS	=	$(LDFLAGS) -lsfml-graphics -lsfml-window -lsfml-system
+
 # Colors
 GREEN		=	\033[0;32m
 RED			=	\033[0;31m
@@ -67,9 +76,10 @@ YELLOW		=	\033[0;33m
 NC			=	\033[0m
 
 # Rules
-all: $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN)
+all: $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN)
 	@echo "$(GREEN)✓ Build complete!$(NC)"
 	@echo "$(BLUE)Server: ./$(SERVER_BIN) <tcp_port> <udp_port>$(NC)"
+	@echo "$(BLUE)Render Client: ./$(RENDER_CLIENT_BIN) <host> <tcp_port>$(NC)"
 	@echo "$(BLUE)Game Client: ./$(INTERACTIVE_BIN) <host> <tcp_port>$(NC)"
 	@echo "$(BLUE)Protocol Test: ./$(TEST_CLIENT_BIN) <host> <tcp_port>$(NC)"
 
@@ -93,6 +103,11 @@ $(INTERACTIVE_BIN): $(INTERACTIVE_OBJ)
 	@$(CXX) $(INTERACTIVE_OBJ) -o $(INTERACTIVE_BIN) $(LDFLAGS)
 	@echo "$(GREEN)✓ $(INTERACTIVE_BIN) created$(NC)"
 
+$(RENDER_CLIENT_BIN): $(RENDER_CLIENT_OBJ)
+	@echo "$(YELLOW)Linking $(RENDER_CLIENT_BIN)...$(NC)"
+	@$(CXX) $(RENDER_CLIENT_OBJ) -o $(RENDER_CLIENT_BIN) $(RENDER_CLIENT_LDFLAGS)
+	@echo "$(GREEN)✓ $(RENDER_CLIENT_BIN) created$(NC)"
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
 	@echo "$(BLUE)Compiling $<...$(NC)"
@@ -105,7 +120,7 @@ clean:
 
 fclean: clean
 	@echo "$(RED)Cleaning binaries...$(NC)"
-	@rm -f $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN)
+	@rm -f $(SERVER_BIN) $(CLIENT_BIN) $(TEST_CLIENT_BIN) $(INTERACTIVE_BIN) $(RENDER_CLIENT_BIN)
 	@echo "$(GREEN)✓ Full clean complete$(NC)"
 
 re: fclean all

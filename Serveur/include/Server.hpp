@@ -46,6 +46,7 @@ private:
 class Server {
 public:
     Server(asio::io_context& io_context, short tcpPort, short udpPort);
+    virtual ~Server() = default;
 
     void run();
     uint32_t generateSessionToken();
@@ -53,7 +54,14 @@ public:
     size_t getClientCount() const { return _sessions.size(); }
     void broadcastMessage(const std::string& message, int excludeClientId = -1);
 
-private:
+    // Virtual methods for subclasses to override
+    virtual void handlePlayerInput(uint8_t playerId, int8_t moveX, int8_t moveY, uint8_t buttons) {
+        (void)playerId; (void)moveX; (void)moveY; (void)buttons;
+    }
+    virtual void onPlayerConnected(uint8_t playerId) { (void)playerId; }
+    virtual void onPlayerDisconnected(uint8_t playerId) { (void)playerId; }
+
+protected:
     void doAccept();
     void doReceiveUDP();
     void handleUDPPacket(const char* data, size_t length,
