@@ -265,6 +265,15 @@ if(RAYLIB_FOUND)
     target_link_libraries(render_client PRIVATE asio raylib)
     target_include_directories(render_client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+    # On Windows, prevent raylib symbol collisions with Windows SDK
+    if(WIN32)
+        target_compile_definitions(render_client PRIVATE
+            WIN32_LEAN_AND_MEAN
+            NOMINMAX
+            NOGDI
+        )
+    endif()
+
     # On Linux, raylib might need additional libraries
     if(UNIX AND NOT APPLE)
         target_link_libraries(render_client PRIVATE m)  # Math library
