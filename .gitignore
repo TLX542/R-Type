@@ -11,6 +11,7 @@ cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
 _deps
+_codeql_build_dir/
 
 # vcpkg (if installed locally)
 vcpkg/
