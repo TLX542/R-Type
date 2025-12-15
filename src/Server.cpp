@@ -361,5 +361,8 @@ void Server::removeSession(int clientId) {
         _sessions.erase(it, _sessions.end());
         std::cout << "[Server] Removed session for client #" << clientId 
                   << " (active sessions: " << _sessions.size() << ")" << std::endl;
+    } else {
+        std::cout << "[Server] Warning: Attempted to remove non-existent session for client #" 
+                  << clientId << std::endl;
     }
 }
