@@ -223,7 +223,8 @@ main() {
         echo "       cmake .."
     fi
     echo "  2. Build the project:"
-    echo "       cmake --build . -j\$(nproc)"
+    echo "       cmake --build . -j8"
+    echo "       # Or use: cmake --build . -j\$(nproc)"
     echo ""
 }
 

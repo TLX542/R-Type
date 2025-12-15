@@ -205,7 +205,7 @@ brew install cmake
 # Build
 mkdir build && cd build
 cmake ..
-cmake --build . -j$(sysctl -n hw.ncpu)
+cmake --build . -j8  # Or use: -j$(sysctl -n hw.ncpu)
 ```
 
 ### Option 2: Using Homebrew Dependencies
@@ -217,7 +217,7 @@ brew install cmake asio raylib
 # Build
 mkdir build && cd build
 cmake -DUSE_SYSTEM_DEPENDENCIES=ON ..
-cmake --build . -j$(sysctl -n hw.ncpu)
+cmake --build . -j8  # Or use: -j$(sysctl -n hw.ncpu)
 ```
 
 ## Build Options

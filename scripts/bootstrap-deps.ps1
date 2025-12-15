@@ -112,16 +112,24 @@ function Install-Dependencies {
     Write-Info "Installing ASIO..."
     & $VcpkgExe install asio:$triplet
     if ($LASTEXITCODE -ne 0) {
-        Write-Warning "Failed to install ASIO"
+        Write-Warning "Failed to install ASIO via vcpkg"
+        Write-Host "  Troubleshooting:" -ForegroundColor Yellow
+        Write-Host "    - Check your internet connection" -ForegroundColor Yellow
+        Write-Host "    - Try running: vcpkg update" -ForegroundColor Yellow
+        Write-Host "    - Check vcpkg logs for detailed error messages" -ForegroundColor Yellow
     }
     
     Write-Info "Installing raylib..."
     & $VcpkgExe install raylib:$triplet
     if ($LASTEXITCODE -ne 0) {
-        Write-Warning "Failed to install raylib"
+        Write-Warning "Failed to install raylib via vcpkg"
+        Write-Host "  Troubleshooting:" -ForegroundColor Yellow
+        Write-Host "    - Check your internet connection" -ForegroundColor Yellow
+        Write-Host "    - Ensure you have Visual Studio C++ tools installed" -ForegroundColor Yellow
+        Write-Host "    - Try running: vcpkg update" -ForegroundColor Yellow
     }
     
-    Write-Success "Dependencies installed!"
+    Write-Success "Dependencies installation completed!"
 }
 
 # Show build instructions
