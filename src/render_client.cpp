@@ -9,6 +9,8 @@
 #include <raylib.h>
 #include <iostream>
 #include <string>
+#include <filesystem>
+#include <cmath>
 
 int main(int argc, char** argv) {
     if (argc != 3) {
@@ -53,8 +55,38 @@ int main(int argc, char** argv) {
     // Load scrolling background
     Texture2D background = LoadTexture("assets/starfield.jpeg");
     if (background.id == 0) {
-        std::cerr << "Warning: Failed to load background image" << std::endl;
+        std::cerr << "Warning: Failed to load background image from 'assets/starfield.jpeg'" << std::endl;
+        std::cerr << "Current working directory: " << std::filesystem::current_path() << std::endl;
+        std::cerr << "Generating procedural starfield as fallback..." << std::endl;
+        
+        // Generate procedural starfield
+        Image starfieldImg = GenImageColor(800, 600, BLACK);
+        for (int i = 0; i < 300; i++) {
+            int x = GetRandomValue(0, 799);
+            int y = GetRandomValue(0, 599);
+            // Use white or near-white colors
+            Color starColor = {
+                static_cast<unsigned char>(GetRandomValue(200, 255)),
+                static_cast<unsigned char>(GetRandomValue(200, 255)),
+                static_cast<unsigned char>(GetRandomValue(200, 255)),
+                255
+            };
+            ImageDrawPixel(&starfieldImg, x, y, starColor);
+        }
+        background = LoadTextureFromImage(starfieldImg);
+        UnloadImage(starfieldImg);
+        
+        if (background.id == 0) {
+            std::cerr << "Error: Failed to generate fallback starfield texture" << std::endl;
+        } else {
+            std::cout << "Successfully generated procedural starfield (" 
+                      << background.width << "x" << background.height << ")" << std::endl;
+        }
+    } else {
+        std::cout << "Successfully loaded starfield texture (" 
+                  << background.width << "x" << background.height << ")" << std::endl;
     }
+    
     float scrollX = 0.0f;
     const float scrollSpeed = 1.0f;  // pixels per frame
 
@@ -116,24 +148,35 @@ int main(int argc, char** argv) {
         }
 
         // Update scrolling background
-        scrollX -= scrollSpeed;
-        if (scrollX <= -800.0f) {  // Window width
-            scrollX = 0.0f;
-        }
-
+        scrollX += scrollSpeed;
+        
         // Render
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Draw scrolling background (draw twice for seamless loop, stretched to window size)
+        // Draw scrolling background with texture-space wrapping
         if (background.id != 0) {
-            Rectangle source = {0, 0, (float)background.width, (float)background.height};
-            Rectangle dest1 = {scrollX, 0, 800, 600};  // Window size
-            Rectangle dest2 = {scrollX + 800, 0, 800, 600};  // Second copy for seamless scrolling
+            float texOffset = fmod(scrollX, (float)background.width);
+            float windowWidth = 800.0f;
+            float windowHeight = 600.0f;
+            
+            // First segment: from texOffset to end of texture
+            float firstSegmentWidth = background.width - texOffset;
+            float firstScaledWidth = (firstSegmentWidth / background.width) * windowWidth;
+            
+            Rectangle source1 = {texOffset, 0, firstSegmentWidth, (float)background.height};
+            Rectangle dest1 = {0, 0, firstScaledWidth, windowHeight};
             Vector2 origin = {0, 0};
-
-            DrawTexturePro(background, source, dest1, origin, 0.0f, WHITE);
-            DrawTexturePro(background, source, dest2, origin, 0.0f, WHITE);
+            DrawTexturePro(background, source1, dest1, origin, 0.0f, WHITE);
+            
+            // Second segment: from start of texture to fill remaining window
+            float remainingWidth = windowWidth - firstScaledWidth;
+            if (remainingWidth > 0) {
+                float secondSegmentWidth = (remainingWidth / windowWidth) * background.width;
+                Rectangle source2 = {0, 0, secondSegmentWidth, (float)background.height};
+                Rectangle dest2 = {firstScaledWidth, 0, remainingWidth, windowHeight};
+                DrawTexturePro(background, source2, dest2, origin, 0.0f, WHITE);
+            }
         }
 
         // Draw all entities
