@@ -53,6 +53,7 @@ public:
     short getUdpPort() const { return _udpPort; }
     size_t getClientCount() const { return _sessions.size(); }
     void broadcastMessage(const std::string& message, int excludeClientId = -1);
+    void removeSession(int clientId);
 
     // Virtual methods for subclasses to override
     virtual void handlePlayerInput(uint8_t playerId, int8_t moveX, int8_t moveY, uint8_t buttons) {

@@ -270,6 +270,14 @@ if(RAYLIB_FOUND)
         target_link_libraries(render_client PRIVATE m)  # Math library
     endif()
 
+    # Copy assets directory to build directory for render_client
+    add_custom_command(TARGET render_client POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets
+            ${CMAKE_BINARY_DIR}/assets
+        COMMENT "Copying assets directory to build directory"
+    )
+
     message(STATUS "render_client will be built with Raylib support")
 else()
     message(STATUS "render_client will NOT be built (Raylib not available)")
@@ -286,6 +294,8 @@ endif()
 
 if(RAYLIB_FOUND)
     install(TARGETS render_client DESTINATION bin)
+    # Install assets directory for render_client
+    install(DIRECTORY assets DESTINATION .)
 endif()
 
 # ============================================================================
