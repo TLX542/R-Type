@@ -1,3 +1,10 @@
+#ifdef _WIN32
+#define NOGDI             // Prevent GDI functions that conflict with raylib
+#define NOUSER            // Prevent user functions that conflict with raylib
+#define WIN32_LEAN_AND_MEAN  // Exclude rarely-used Windows headers
+#define NOMINMAX          // Prevent Windows.h from defining min/max macros
+#endif
+
 #include "../include/GameClient.hpp"
 #include <raylib.h>
 #include <iostream>
