@@ -53,6 +53,10 @@ int main(int argc, char** argv) {
     SetTargetFPS(60);
 
     // Load scrolling background
+    const int WINDOW_WIDTH = 800;
+    const int WINDOW_HEIGHT = 600;
+    const int STAR_COUNT = 300;
+    
     Texture2D background = LoadTexture("assets/starfield.jpeg");
     if (background.id == 0) {
         std::cerr << "Warning: Failed to load background image from 'assets/starfield.jpeg'" << std::endl;
@@ -60,10 +64,10 @@ int main(int argc, char** argv) {
         std::cerr << "Generating procedural starfield as fallback..." << std::endl;
         
         // Generate procedural starfield
-        Image starfieldImg = GenImageColor(800, 600, BLACK);
-        for (int i = 0; i < 300; i++) {
-            int x = GetRandomValue(0, 799);
-            int y = GetRandomValue(0, 599);
+        Image starfieldImg = GenImageColor(WINDOW_WIDTH, WINDOW_HEIGHT, BLACK);
+        for (int i = 0; i < STAR_COUNT; i++) {
+            int x = GetRandomValue(0, WINDOW_WIDTH - 1);
+            int y = GetRandomValue(0, WINDOW_HEIGHT - 1);
             // Use white or near-white colors
             Color starColor = {
                 static_cast<unsigned char>(GetRandomValue(200, 255)),
@@ -155,7 +159,7 @@ int main(int argc, char** argv) {
         ClearBackground(BLACK);
 
         // Draw scrolling background with texture-space wrapping
-        if (background.id != 0) {
+        if (background.id != 0 && background.width > 0 && background.height > 0) {
             float texOffset = fmod(scrollX, (float)background.width);
             float windowWidth = 800.0f;
             float windowHeight = 600.0f;
