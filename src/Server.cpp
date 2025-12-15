@@ -93,6 +93,11 @@ void Session::handleMessage(const std::string& message) {
 
         std::cout << "[TCP] Client #" << _clientId << " requested disconnect" << std::endl;
 
+        // Notify game logic about player disconnection
+        if (_clientInfo.playerId != 0) {
+            _server->onPlayerDisconnected(_clientInfo.playerId);
+        }
+
         // Notifier les autres joueurs
         if (_clientInfo.playerId != 0) {
             TCPProtocol::Message leaveMsg;
@@ -100,6 +105,9 @@ void Session::handleMessage(const std::string& message) {
             leaveMsg.params["id"] = std::to_string(_clientInfo.playerId);
             _server->broadcastMessage(leaveMsg.serialize(), _clientId);
         }
+
+        // Remove this session from the server's session list
+        _server->removeSession(_clientId);
 
         // Fermer la socket
         _socket.close();
@@ -140,6 +148,9 @@ void Session::doRead() {
                     leaveMsg.params["id"] = std::to_string(_clientInfo.playerId);
                     _server->broadcastMessage(leaveMsg.serialize(), _clientId);
                 }
+
+                // Remove this session from the server's session list
+                _server->removeSession(_clientId);
             }
         });
 }
@@ -337,5 +348,21 @@ void Server::broadcastMessage(const std::string& message, int excludeClientId) {
         if (session->getId() != excludeClientId) {
             session->send(message);
         }
+    }
+}
+
+void Server::removeSession(int clientId) {
+    auto it = std::remove_if(_sessions.begin(), _sessions.end(),
+        [clientId](const std::shared_ptr<Session>& session) {
+            return session->getId() == clientId;
+        });
+    
+    if (it != _sessions.end()) {
+        _sessions.erase(it, _sessions.end());
+        std::cout << "[Server] Removed session for client #" << clientId 
+                  << " (active sessions: " << _sessions.size() << ")" << std::endl;
+    } else {
+        std::cout << "[Server] Warning: Attempted to remove non-existent session for client #" 
+                  << clientId << std::endl;
     }
 }
