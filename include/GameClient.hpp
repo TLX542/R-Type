@@ -15,8 +15,9 @@ struct ClientEntity {
     float width, height;
     uint8_t health;
     uint8_t r, g, b;
+    std::string username;
 
-    ClientEntity() : networkId(0), x(0), y(0), width(48), height(48), health(100), r(255), g(255), b(255) {}
+    ClientEntity() : networkId(0), x(0), y(0), width(48), height(48), health(100), r(255), g(255), b(255), username("") {}
 };
 
 /**

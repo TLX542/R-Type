@@ -60,13 +60,13 @@ INTERACTIVE_SRC	=	$(SRC_DIR)/interactive_client.cpp \
 INTERACTIVE_OBJ	=	$(INTERACTIVE_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 INTERACTIVE_BIN	=	game_client
 
-# Render client (SFML client)
+# Render client (Raylib client)
 RENDER_CLIENT_SRC	=	$(SRC_DIR)/render_client.cpp \
 						$(SRC_DIR)/GameClient.cpp \
 						$(SRC_DIR)/Protocol.cpp
 RENDER_CLIENT_OBJ	=	$(RENDER_CLIENT_SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 RENDER_CLIENT_BIN	=	render_client
-RENDER_CLIENT_LDFLAGS	=	$(LDFLAGS) -lsfml-graphics -lsfml-window -lsfml-system
+RENDER_CLIENT_LDFLAGS	=	$(LDFLAGS) -lraylib -lm
 
 # Headless test client (no SFML, for automated testing)
 HEADLESS_CLIENT_SRC	=	test_headless_client.cpp

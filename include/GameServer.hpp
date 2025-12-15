@@ -46,17 +46,32 @@ private:
     void updateGame(float deltaTime);
     void broadcastWorldState();
 
+    // Gameplay systems
+    void spawnBullet(uint8_t playerId, Entity playerEntity);
+    void spawnEnemy();
+    void updateLifetimes(float deltaTime);
+    void checkCollisions();
+    void destroyEntity(Entity entity);
+
     // ECS
     registry _registry;
     uint32_t _nextNetworkId;
 
     // Map player ID to entity
     std::unordered_map<uint8_t, Entity> _playerEntities;
+    std::vector<Entity> _enemyEntities;
+    std::vector<Entity> _bulletEntities;
+
+    // Enemy spawning
+    float _enemySpawnTimer;
+    static constexpr float MIN_ENEMY_SPAWN_INTERVAL = 3.0f;
+    static constexpr float MAX_ENEMY_SPAWN_INTERVAL = 5.0f;
+    float _nextEnemySpawnTime;
 
     // Game loop control
     std::atomic<bool> _gameRunning;
     std::thread _gameThread;
-    
+
     // Tick rate (60 updates per second)
     static constexpr int TICK_RATE = 60;
     static constexpr float TICK_INTERVAL = 1.0f / TICK_RATE;

@@ -211,10 +211,10 @@ void Server::doReceiveUDP() {
         _udpSenderEndpoint,
         [this](std::error_code ec, std::size_t length) {
             if (!ec && length > 0) {
-                std::cout << "[UDP] Received packet from "
-                          << _udpSenderEndpoint.address().to_string() << ":"
-                          << _udpSenderEndpoint.port() 
-                          << " (" << length << " bytes)" << std::endl;
+                // std::cout << "[UDP] Received packet from "
+                //           << _udpSenderEndpoint.address().to_string() << ":"
+                //           << _udpSenderEndpoint.port()
+                //           << " (" << length << " bytes)" << std::endl;
                 handleUDPPacket(_udpBuffer, length, _udpSenderEndpoint);
             } else if (ec) {
                 std::cerr << "[UDP] Receive error: " << ec.message() << std::endl;
@@ -281,6 +281,10 @@ void Server::handleUDPPacket(const char* data, size_t length,
                 PlayerInputPayload payload;
                 std::memcpy(&payload, data + sizeof(PacketHeader), sizeof(PlayerInputPayload));
 
+                // SECURITY: Use the playerId from the authenticated session, NOT from the payload
+                // This prevents clients from controlling other players by sending fake playerIds
+                uint8_t authenticatedPlayerId = clientSession->getClientInfo().playerId;
+
                 // Convertir moveX/moveY en directions ZQSD
                 std::string direction = "";
                 if (payload.moveY == -1) direction += "Z";
@@ -297,14 +301,14 @@ void Server::handleUDPPacket(const char* data, size_t length,
 
                 // N'afficher que s'il y a un input réel (pas de mouvement vide)
                 if (direction != "-" || buttons != "-") {
-                    std::cout << "[UDP] Player " << (int)payload.playerId
+                    std::cout << "[UDP] Player " << (int)authenticatedPlayerId
                               << " → Direction: [" << direction << "]"
                               << " | Buttons: [" << buttons << "]"
                               << std::endl;
                 }
 
-                // Apply input to game logic
-                handlePlayerInput(payload.playerId, payload.moveX, payload.moveY, payload.buttons);
+                // Apply input to game logic using authenticated player ID
+                handlePlayerInput(authenticatedPlayerId, payload.moveX, payload.moveY, payload.buttons);
             }
             break;
         }

@@ -1,5 +1,5 @@
 #include "../include/GameClient.hpp"
-#include <SFML/Graphics.hpp>
+#include <raylib.h>
 #include <iostream>
 #include <string>
 
@@ -39,9 +39,17 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Create SFML window
-    sf::RenderWindow window(sf::VideoMode(800, 600), "R-Type Client - Player " + std::to_string(client.getPlayerId()));
-    window.setFramerateLimit(60);
+    // Create Raylib window
+    InitWindow(800, 600, ("R-Type Client - Player " + std::to_string(client.getPlayerId())).c_str());
+    SetTargetFPS(60);
+
+    // Load scrolling background
+    Texture2D background = LoadTexture("assets/starfield.jpeg");
+    if (background.id == 0) {
+        std::cerr << "Warning: Failed to load background image" << std::endl;
+    }
+    float scrollX = 0.0f;
+    const float scrollSpeed = 1.0f;  // pixels per frame
 
     std::cout << "\n=== CONTROLS ===" << std::endl;
     std::cout << "Arrow Keys: Move" << std::endl;
@@ -53,40 +61,39 @@ int main(int argc, char** argv) {
     int frameCount = 0;
     static const bool VERBOSE_LOGGING = false;
 
+    // Shooting cooldown
+    double lastShootTime = 0.0;
+    const double shootCooldown = 0.5;  // 0.5 seconds between shots
+
     // Main loop
     std::cout << "[Render] Entering main loop" << std::endl;
-    while (window.isOpen()) {
+    while (!WindowShouldClose()) {
         frameCount++;
-        // Process events
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                window.close();
-            }
-        }
+        double currentTime = GetTime();
 
         // Read keyboard input
         int8_t moveX = 0;
         int8_t moveY = 0;
         uint8_t buttons = 0;
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        if (IsKeyDown(KEY_LEFT)) {
             moveX = -1;
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+        if (IsKeyDown(KEY_RIGHT)) {
             moveX = 1;
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+        if (IsKeyDown(KEY_UP)) {
             moveY = -1;
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+        if (IsKeyDown(KEY_DOWN)) {
             moveY = 1;
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-            buttons |= BTN_SHOOT;
+        if (IsKeyDown(KEY_SPACE)) {
+            // Check if cooldown has elapsed
+            if (currentTime - lastShootTime >= shootCooldown) {
+                buttons |= BTN_SHOOT;
+                lastShootTime = currentTime;
+            }
         }
 
         // Send input to server
@@ -97,26 +104,54 @@ int main(int argc, char** argv) {
 
         // Periodic logging (every 60 frames = ~1 second at 60 FPS)
         if (VERBOSE_LOGGING && frameCount % 60 == 0) {
-            std::cout << "[Render] Frame " << frameCount 
+            std::cout << "[Render] Frame " << frameCount
                       << ", entities: " << client.getEntities().size() << std::endl;
         }
 
+        // Update scrolling background
+        scrollX -= scrollSpeed;
+        if (scrollX <= -800.0f) {  // Window width
+            scrollX = 0.0f;
+        }
+
         // Render
-        window.clear(sf::Color::Black);
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        // Draw scrolling background (draw twice for seamless loop, stretched to window size)
+        if (background.id != 0) {
+            Rectangle source = {0, 0, (float)background.width, (float)background.height};
+            Rectangle dest1 = {scrollX, 0, 800, 600};  // Window size
+            Rectangle dest2 = {scrollX + 800, 0, 800, 600};  // Second copy for seamless scrolling
+            Vector2 origin = {0, 0};
+
+            DrawTexturePro(background, source, dest1, origin, 0.0f, WHITE);
+            DrawTexturePro(background, source, dest2, origin, 0.0f, WHITE);
+        }
 
         // Draw all entities
-        sf::RectangleShape shape;
         int drawnCount = 0;
         for (const auto& [networkId, entity] : client.getEntities()) {
-            shape.setSize(sf::Vector2f(entity.width, entity.height));
-            shape.setFillColor(sf::Color(entity.r, entity.g, entity.b));
-            shape.setPosition(entity.x, entity.y);
-            window.draw(shape);
+            // Draw entity rectangle
+            Color entityColor = {entity.r, entity.g, entity.b, 255};
+            DrawRectangle((int)entity.x, (int)entity.y, (int)entity.width, (int)entity.height, entityColor);
+
+            // Draw username above entity if it has one
+            if (!entity.username.empty()) {
+                const char* text = entity.username.c_str();
+                int textWidth = MeasureText(text, 14);
+                DrawText(text,
+                        (int)(entity.x + (entity.width - textWidth) / 2.0f),
+                        (int)(entity.y - 20.0f),
+                        14,
+                        WHITE);
+            }
+
             drawnCount++;
-            
+
             // Log first few entities on frame 1 for debugging
             if (VERBOSE_LOGGING && frameCount == 1) {
-                std::cout << "[Render] Drawing entity " << networkId 
+                std::cout << "[Render] Drawing entity " << networkId
                           << " at (" << entity.x << ", " << entity.y << ")"
                           << " size (" << entity.width << "x" << entity.height << ")"
                           << " color (" << (int)entity.r << "," << (int)entity.g << "," << (int)entity.b << ")"
@@ -129,14 +164,12 @@ int main(int argc, char** argv) {
             std::cout << "[Render] Frame " << frameCount << ": Drawing " << drawnCount << " entities" << std::endl;
         }
 
-        // Draw info text
-        sf::Font font;
-        // Note: In a real application, you'd load a font file
-        // For now, we'll skip text rendering if font loading fails
-        
-        window.display();
+        EndDrawing();
     }
 
+    // Cleanup
+    UnloadTexture(background);
+    CloseWindow();
     std::cout << "[Render] Exiting main loop" << std::endl;
     return 0;
 }

@@ -77,7 +77,7 @@ constexpr uint8_t BTN_DOWN = 0x08;       // Bit 3
 constexpr uint8_t BTN_LEFT = 0x10;       // Bit 4
 constexpr uint8_t BTN_RIGHT = 0x20;      // Bit 5
 
-// ENTITY_SPAWN Payload (25 bytes)
+// ENTITY_SPAWN Payload (41 bytes)
 struct EntitySpawnPayload {
     uint32_t networkId;     // ID réseau unique
     uint8_t entityType;     // Type d'entité
@@ -87,6 +87,7 @@ struct EntitySpawnPayload {
     float velocityX;        // Vitesse X
     float velocityY;        // Vitesse Y
     uint8_t health;         // Points de vie
+    char username[16];      // Nom du joueur (seulement pour les entités PLAYER)
 };
 
 // ENTITY_UPDATE Payload (21 bytes)

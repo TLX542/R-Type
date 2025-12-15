@@ -208,12 +208,14 @@ void GameClient::handleEntitySpawn(const char* data) {
     entity.networkId = payload.networkId;
     entity.x = payload.posX;
     entity.y = payload.posY;
-    entity.width = 48.0f;
-    entity.height = 48.0f;
     entity.health = payload.health;
+    entity.username = std::string(payload.username);  // Copy username
 
-    // Use different colors based on entity type
+    // Set size and color based on entity type
     if (payload.entityType == PLAYER) {
+        // Player ships
+        entity.width = 48.0f;
+        entity.height = 48.0f;
         // Different color for each player
         uint8_t colors[][3] = {
             {200, 30, 30},   // Red
@@ -225,16 +227,43 @@ void GameClient::handleEntitySpawn(const char* data) {
         entity.r = colors[colorIdx][0];
         entity.g = colors[colorIdx][1];
         entity.b = colors[colorIdx][2];
+    } else if (payload.entityType == ENEMY) {
+        // Enemies - red squares
+        entity.width = 40.0f;
+        entity.height = 40.0f;
+        entity.r = 255;
+        entity.g = 0;
+        entity.b = 0;
+    } else if (payload.entityType == BULLET_PLAYER) {
+        // Player bullets - yellow and thin
+        entity.width = 8.0f;
+        entity.height = 2.0f;
+        entity.r = 255;
+        entity.g = 255;
+        entity.b = 0;
+    } else if (payload.entityType == BULLET_ENEMY) {
+        // Enemy bullets - red and thin
+        entity.width = 8.0f;
+        entity.height = 2.0f;
+        entity.r = 255;
+        entity.g = 0;
+        entity.b = 0;
     } else {
+        // Default - white
+        entity.width = 16.0f;
+        entity.height = 16.0f;
         entity.r = 255;
         entity.g = 255;
         entity.b = 255;
     }
 
     _entities[entity.networkId] = entity;
-    
-    std::cout << "[Client] Entity spawned: ID=" << entity.networkId 
-              << " at (" << entity.x << ", " << entity.y << ")" << std::endl;
+
+    std::cout << "[Client] Entity spawned: ID=" << entity.networkId
+              << " Type=" << (int)payload.entityType
+              << " Username=\"" << entity.username << "\""
+              << " at (" << entity.x << ", " << entity.y << ")"
+              << " size=" << entity.width << "x" << entity.height << std::endl;
 }
 
 void GameClient::handleEntityUpdate(const char* data) {

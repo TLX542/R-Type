@@ -58,3 +58,38 @@ struct PlayerOwner {
     PlayerOwner() = default;
     explicit PlayerOwner(uint8_t pid) : playerId(pid) {}
 };
+
+// Gameplay components
+
+struct Health {
+    uint8_t current{100};
+    uint8_t max{100};
+    Health() = default;
+    Health(uint8_t cur, uint8_t mx) : current(cur), max(mx) {}
+};
+
+struct Damage {
+    uint8_t amount{10};
+    Damage() = default;
+    explicit Damage(uint8_t amt) : amount(amt) {}
+};
+
+struct EntityTypeTag {
+    enum Type : uint8_t {
+        PLAYER = 0,
+        ENEMY = 1,
+        BULLET_PLAYER = 2,
+        BULLET_ENEMY = 3,
+        POWERUP = 4,
+        OBSTACLE = 5
+    };
+    Type type{PLAYER};
+    EntityTypeTag() = default;
+    explicit EntityTypeTag(Type t) : type(t) {}
+};
+
+struct Lifetime {
+    float remaining{5.0f};  // seconds
+    Lifetime() = default;
+    explicit Lifetime(float time) : remaining(time) {}
+};

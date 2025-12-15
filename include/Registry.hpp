@@ -31,11 +31,7 @@ public:
 
         auto it = _component_map.find(key);
         if (it == _component_map.end()) {
-            std::cerr << "[registry] storage not found, creating new ComponentStorage for " << key.name() << "\n";
             auto up = std::make_unique<ComponentStorage<Component>>();
-            ComponentStorage<Component>* raw = up.get();
-            std::cerr << "[registry] created ComponentStorage at ptr=" << static_cast<void*>(raw) << "\n";
-
             auto res = _component_map.emplace(key, std::move(up));
             if (!res.second) {
                 std::cerr << "[registry] emplace failed for " << key.name() << "\n";
@@ -120,9 +116,9 @@ public:
     // add_component: returns a reference to the stored Component
     template <typename Component>
     Component& add_component(entity_t const& to, Component&& c) {
-        std::cerr << "[registry] add_component<" << typeid(Component).name() << ">() for entity " << static_cast<size_t>(to) << "\n";
+        // std::cerr << "[registry] add_component<" << typeid(Component).name() << ">() for entity " << static_cast<size_t>(to) << "\n";
         auto& storage = register_component<Component>();
-        std::cerr << "[registry] got storage reference at " << static_cast<void*>(&storage) << "\n";
+        // std::cerr << "[registry] got storage reference at " << static_cast<void*>(&storage) << "\n";
         return storage.insert_at(static_cast<std::size_t>(to), std::forward<Component>(c));
     }
 
