@@ -162,6 +162,9 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 
 ## Troubleshooting
 
+### Raylib Symbol Collision with Windows SDK
+The render_client target adds `WIN32_LEAN_AND_MEAN`, `NOMINMAX`, and `NOGDI` compile definitions to avoid name collisions with Windows SDK when building with MSVC. This prevents conflicts between raylib symbols (Rectangle, CloseWindow, ShowCursor, DrawText, etc.) and GDI/User declarations.
+
 ### Error: "CMake not found"
 **Solution**: Add CMake to your PATH or reinstall CMake with "Add to PATH" option.
 

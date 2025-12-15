@@ -105,6 +105,16 @@ UDP port: 4243
 
 ## Common Issues
 
+### Issue: Windows Build - Raylib Symbol Collisions
+
+**Symptoms:**
+- Build fails on Windows with MSVC due to symbol redefinition errors
+- Errors mention `Rectangle`, `CloseWindow`, `ShowCursor`, `DrawText`, etc.
+- Conflicts between raylib and Windows SDK (GDI) declarations
+
+**Solution:**
+The render_client target is configured with `WIN32_LEAN_AND_MEAN`, `NOMINMAX`, and `NOGDI` compile definitions by default on Windows builds. This prevents name collisions with the Windows SDK. No manual changes required - the CMake configuration handles this automatically.
+
 ### Issue: "No entities received"
 
 **Diagnosis:**
