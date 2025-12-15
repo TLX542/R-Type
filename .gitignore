@@ -1,16 +1,51 @@
 bs-rtype
 obj
 .vscode
-build
+
+# CMake build directory and artifacts
+build/
+_deps/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps
+
+# vcpkg (if installed locally)
+vcpkg/
+vcpkg_installed/
 
 # Server binaries
-*r-type_server
-*client_test
-*protocol_test
-*game_client
-*render_client
-*test_headless
-*obj/
+r-type_server
+client_test
+protocol_test
+game_client
+render_client
+test_headless
+
+# Object files
+*.o
+obj/
 
 # Log files
 *.log
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.user
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+*.vcxproj
+*.vcxproj.filters
+
+# OS files
+.DS_Store
+Thumbs.db
