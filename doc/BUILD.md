@@ -1,77 +1,258 @@
-# Building and Running R-Type Server and Client
+# Building and Running R-Type
+
+This guide covers building R-Type on Linux, Windows, and macOS using the modern CMake build system with **automatic dependency management**.
+
+## 🚀 What's New
+
+The R-Type build system now features:
+- **Automatic Dependency Download**: CMake automatically fetches ASIO and raylib if not found on your system
+- **Cross-Platform Support**: Builds on Linux, Windows (MSVC/MinGW), and macOS
+- **Multiple Build Methods**: System packages, vcpkg, or automatic FetchContent
+- **CMake GUI Support**: Easy configuration on Windows
+- **Modern CMake**: Target-based linking with proper dependency management
+- **Bootstrap Scripts**: Helper scripts for easy dependency installation
+
+## Table of Contents
+- [Quick Start](#quick-start)
+- [Prerequisites](#prerequisites)
+- [Building on Linux](#building-on-linux)
+- [Building on Windows](#building-on-windows)
+- [Building on macOS](#building-on-macos)
+- [Build Options](#build-options)
+- [Running](#running)
+- [Troubleshooting](#troubleshooting)
+
+## Quick Start
+
+The easiest way to build R-Type is to let CMake automatically download and build dependencies:
+
+**Linux/macOS:**
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build . -j$(nproc)
+```
+
+**Windows (PowerShell):**
+```powershell
+mkdir build; cd build
+cmake ..
+cmake --build . --config Release
+```
+
+**That's it!** CMake will automatically download ASIO and raylib if they're not installed on your system.
+
+**Note**: On Linux, you may need X11 development libraries for raylib:
+```bash
+sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
+```
 
 ## Prerequisites
 
 ### All Platforms
-- **C++17 compiler** (g++, clang, or MSVC)
-- **Make** (for building with Makefile)
-- **CMake** >= 3.15 (optional, for alternative build)
+- **C++17 compatible compiler**
+  - Linux: GCC 7+ or Clang 5+
+  - Windows: Visual Studio 2019+ or MinGW-w64
+  - macOS: Xcode 10+ (Clang)
+- **CMake** >= 3.16
+- **Git** (for FetchContent to download dependencies)
 
-### Linux (Ubuntu/Debian)
+### Optional: System Package Manager
+If you prefer using system-installed dependencies instead of auto-download, see platform-specific sections below.
+
+## Building on Linux
+
+### Option 1: Automatic Dependencies (Recommended)
+
+This is the simplest method - CMake downloads and builds dependencies automatically:
+
 ```bash
-sudo apt-get update
-sudo apt-get install -y build-essential g++ make cmake
-sudo apt-get install -y libasio-dev      # For network (ASIO standalone)
-sudo apt-get install -y libsfml-dev      # For client rendering
+# Clone the repository (if not already done)
+git clone https://github.com/TLX542/R-Type.git
+cd R-Type
+
+# Create build directory
+mkdir build
+cd build
+
+# Configure (this downloads dependencies automatically)
+cmake ..
+
+# Build with parallel jobs
+cmake --build . -j$(nproc)
+
+# Executables are in the build directory
+ls -l r-type_server render_client game_client
 ```
 
-### macOS
+### Option 2: Using System Dependencies
+
+First, run the bootstrap script to install system dependencies:
+
 ```bash
+# Install system dependencies
+./scripts/bootstrap-deps.sh
+
+# Build with system dependencies
+mkdir build && cd build
+cmake -DUSE_SYSTEM_DEPENDENCIES=ON ..
+cmake --build . -j$(nproc)
+```
+
+The bootstrap script supports multiple package managers:
+- **Ubuntu/Debian**: Uses `apt-get`
+- **Arch Linux**: Uses `pacman`
+- **Fedora/RHEL**: Uses `dnf`
+- **macOS**: Uses `brew`
+
+### Option 3: Using vcpkg
+
+```bash
+# Install dependencies via vcpkg
+./scripts/bootstrap-deps.sh --vcpkg
+
+# Build with vcpkg toolchain
+mkdir build && cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
+cmake --build . -j$(nproc)
+```
+
+## Building on Windows
+
+### Option 1: Using CMake GUI (Easiest for Windows)
+
+1. **Install Prerequisites**
+   - Download and install [CMake](https://cmake.org/download/) (3.16 or later)
+   - Download and install [Visual Studio 2019/2022](https://visualstudio.microsoft.com/) with "Desktop development with C++"
+   - Download and install [Git for Windows](https://git-scm.com/download/win)
+
+2. **Run Bootstrap Script** (Optional but recommended)
+   ```powershell
+   # In PowerShell, navigate to project directory
+   cd R-Type
+   .\scripts\bootstrap-deps.ps1
+   ```
+   This installs dependencies via vcpkg and shows build instructions.
+
+3. **Build with CMake GUI**
+   - Open CMake GUI
+   - Set "Where is the source code" to: `C:\path\to\R-Type`
+   - Set "Where to build the binaries" to: `C:\path\to\R-Type\build`
+   - Click **Configure**
+   - Select your generator (e.g., "Visual Studio 17 2022")
+   - Click **Generate**
+   - Click **Open Project** to open in Visual Studio
+   - In Visual Studio: Build > Build Solution (or press F7)
+
+4. **Executables** will be in `build\Release\` or `build\Debug\`
+
+### Option 2: Command Line with vcpkg
+
+```powershell
+# Run bootstrap script to setup vcpkg
+.\scripts\bootstrap-deps.ps1
+
+# Create build directory
+mkdir build
+cd build
+
+# Configure with vcpkg toolchain
+cmake -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake ..
+
+# Build
+cmake --build . --config Release
+
+# Executables are in build\Release\
+```
+
+### Option 3: Automatic Dependencies (No vcpkg)
+
+```powershell
+# Create build directory
+mkdir build
+cd build
+
+# Configure (downloads dependencies automatically)
+cmake ..
+
+# Build
+cmake --build . --config Release
+```
+
+### Option 4: Using Visual Studio 2019/2022 Directly
+
+1. Open Visual Studio
+2. File → Open → Folder
+3. Select the R-Type project directory
+4. Visual Studio detects CMakeLists.txt automatically
+5. If using vcpkg, edit `CMakeSettings.json` to add:
+   ```json
+   "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake"
+   ```
+6. Build → Build All (Ctrl+Shift+B)
+
+## Building on macOS
+
+### Option 1: Automatic Dependencies
+
+```bash
+# Install Xcode Command Line Tools (if not already installed)
+xcode-select --install
+
+# Install CMake via Homebrew
 brew install cmake
-brew install asio
-brew install sfml
+
+# Build
+mkdir build && cd build
+cmake ..
+cmake --build . -j8  # Or use: -j$(sysctl -n hw.ncpu)
 ```
 
-### Windows
-- Install Visual Studio 2019+ or MinGW-w64
-- Install dependencies via vcpkg:
-  ```cmd
-  vcpkg install asio:x64-windows
-  vcpkg install sfml:x64-windows
-  ```
+### Option 2: Using Homebrew Dependencies
 
-## Building
-
-### Server Only
-
-Navigate to the `repo root` directory:
-
-**Build the server:**
 ```bash
-make r-type_server
+# Install dependencies
+brew install cmake asio raylib
+
+# Build
+mkdir build && cd build
+cmake -DUSE_SYSTEM_DEPENDENCIES=ON ..
+cmake --build . -j8  # Or use: -j$(sysctl -n hw.ncpu)
 ```
 
-This creates the `r-type_server` executable.
+## Build Options
 
-**Clean build:**
+CMake provides several options to customize the build:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `USE_SYSTEM_DEPENDENCIES` | OFF | Force using system-installed dependencies only |
+| `USE_VCPKG` | OFF | Enable vcpkg integration hints and messages |
+| `BUILD_EXAMPLES` | OFF | Build example executables (future use) |
+| `BUILD_TESTS` | ON | Build test executables (test_headless) |
+| `CMAKE_BUILD_TYPE` | - | Build type: Debug, Release, RelWithDebInfo, MinSizeRel |
+
+### Examples
+
 ```bash
-make clean      # Remove object files
-make fclean     # Remove object files and binaries
-make re         # Clean and rebuild
+# Force using system dependencies
+cmake -DUSE_SYSTEM_DEPENDENCIES=ON ..
+
+# Disable building tests
+cmake -DBUILD_TESTS=OFF ..
+
+# Enable vcpkg hints
+cmake -DUSE_VCPKG=ON ..
+
+# Debug build with symbols
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+# Release build with optimizations
+cmake -DCMAKE_BUILD_TYPE=Release ..
+
+# Combine multiple options
+cmake -DUSE_SYSTEM_DEPENDENCIES=ON -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
 ```
-
-### Client Only
-
-**Build the render client (requires SFML):**
-```bash
-make render_client
-```
-
-This creates the `render_client` executable.
-
-### All Targets
-
-**Build everything:**
-```bash
-make
-```
-
-This builds:
-- `r-type_server` - Game server with ECS
-- `render_client` - SFML-based rendering client
-- `game_client` - Terminal-based interactive client
-- `client_test` - Simple echo test client
-- `protocol_test` - Protocol testing client
 
 ## Running
 

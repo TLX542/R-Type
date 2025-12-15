@@ -12,9 +12,25 @@ Server-authoritative multiplayer game using ECS (Entity-Component-System) and bi
 
 ## Quick Start
 
-See **[doc/BUILD.md](doc/BUILD.md)** for detailed build and run instructions.
+### Modern CMake Build (Recommended - Cross-platform)
 
-**TL;DR:**
+```bash
+# Build with automatic dependency download
+mkdir build && cd build
+cmake ..
+cmake --build . -j8
+
+# Terminal 1: Start server
+./r-type_server 4242 4243
+
+# Terminal 2+: Start client(s)
+./render_client localhost 4242
+```
+
+**Windows users**: See **[doc/WINDOWS_CMAKE_GUIDE.md](doc/WINDOWS_CMAKE_GUIDE.md)** for detailed instructions.
+
+### Legacy Makefile Build (Linux only)
+
 ```bash
 # Build
 make
@@ -26,14 +42,24 @@ make
 ./render_client localhost 4242
 ```
 
+See **[doc/BUILD.md](doc/BUILD.md)** for detailed build and run instructions.
+
 ## Documentation
 
-- **[doc/BUILD.md](doc/BUILD.md)** - Building and running
-- **[doc/ARCHITECTURE.md](doc/ARCHITECTURE.md)** - System architecture
-- **[doc/PROTOCOL.md](doc/PROTOCOL.md)** - Network protocol
+### Building & Setup
+- **[doc/BUILD.md](doc/BUILD.md)** - Comprehensive build guide (Linux, Windows, macOS)
+- **[doc/CMAKE_QUICK_START.md](doc/CMAKE_QUICK_START.md)** - CMake quick reference
+- **[doc/WINDOWS_CMAKE_GUIDE.md](doc/WINDOWS_CMAKE_GUIDE.md)** - Windows-specific guide with CMake GUI
+- **[doc/CMAKE_BUILD.md](doc/CMAKE_BUILD.md)** - Legacy CMake documentation
+
+### Architecture & Protocol
+- **[doc/ARCHITECTURE.md](doc/ARCHITECTURE.md)** - System architecture (ECS)
+- **[doc/PROTOCOL.md](doc/PROTOCOL.md)** - Network protocol specification
 - **[doc/TCP_UDP_ARCHITECTURE.md](doc/TCP_UDP_ARCHITECTURE.md)** - TCP/UDP design
 - **[doc/CONNEXION_PROTOCOL.md](doc/CONNEXION_PROTOCOL.md)** - Connection flow
-- **[doc/TROUBLESHOOTING.md](doc/TROUBLESHOOTING.md)** - Troubleshooting guide
+
+### Help & Troubleshooting
+- **[doc/TROUBLESHOOTING.md](doc/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## Components
 
